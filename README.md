@@ -43,7 +43,7 @@ subsampling longdress0000.ply 0.5 ouput.ply
 
 ### Screen area
 
-This program is currently still in developing. This function print the screen proportion (estimated by the bounding box) of the 8 tiles given by upper "tilling" example command.
+This program is currently still in development. This function print the screen proportion (estimated by the bounding box) of the 8 tiles given by upper "tilling" example command.
 
 <br/>`screen_area`<br/>
 
@@ -51,3 +51,7 @@ For example:
 ```shell
 screen_area
 ```
+
+## pcprep app
+
+This tools is currently still in development.
