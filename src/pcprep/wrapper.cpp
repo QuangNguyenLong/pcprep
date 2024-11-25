@@ -52,10 +52,6 @@ extern "C"
     // Wrapper implementation
     int ply_loader(const char *filename, float *pos, unsigned char *rgb)
     {
-        // char filename_copy[1024];
-        // strncpy(filename_copy, filename, sizeof(filename_copy) - 1);
-        // filename_copy[sizeof(filename_copy) - 1] = '\0';
-
         return p_ply_loader(filename, pos, rgb) ? 1 : 0;
     }
 }

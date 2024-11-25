@@ -19,8 +19,8 @@ make
 
 All programs are placed in `bin`.   
 
-### Examples
-## Tiling
+## Examples
+### Tiling
 
 This program takes input a point cloud, currently supporting Polygon File Format (PLY), the numbers of division per axis, and output tiles by deviding the point cloud bounding box.
 
@@ -30,7 +30,7 @@ For example:
 ```shell
 tiling longdress0000.ply 2 2 2 1 test
 ```
-## Subsampling
+### Subsampling
 
 This program takes input a point cloud, currently supporting Polygon File Format (PLY), subsampling percentage (from 0 to 1) and output subsampled point cloud.
 
@@ -41,7 +41,7 @@ For example:
 subsampling longdress0000.ply 0.5 ouput.ply
 ```
 
-## Screen area
+### Screen area
 
 This program is currently still in developing. This function print the screen proportion (estimated by the bounding box) of the 8 tiles given by upper "tilling" example command.
 
