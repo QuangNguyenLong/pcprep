@@ -46,3 +46,11 @@ add_executable(screen_area ${SCREEN_AREA_SOURCE})
 set_target_properties(screen_area PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin
 )
+
+set(PCPREP_DIR ${PROJECT_SOURCE_DIR}/pcprep)
+set(PCPREP_SOURCE ${PCPREP_SHARED_SOURCE} ${PCPREP_DIR}/main.c)
+add_executable(pcprep ${PCPREP_SOURCE})
+# target_link_libraries(pcprep pthread)
+set_target_properties(pcprep PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin
+)
