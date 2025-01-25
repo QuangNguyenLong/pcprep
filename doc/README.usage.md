@@ -44,7 +44,7 @@ The `pcp` program processes point cloud data from a source file and generates on
 ---
 
 ### Tiling Option
-- `-t, --tile=nx,ny,nz`  
+#### `-t, --tile=nx,ny,nz`  
   Divides the point cloud into a grid of tiles along each axis, the **tile** option is performed first, before **process** and **status** option.  
   - `nx, ny, nz`: Number of divisions along the x, y, and z axes.  
   - Example: `2,2,2`.
@@ -71,7 +71,7 @@ The `pcp` program processes point cloud data from a source file and generates on
 --- 
 
 ### Status Option
-- `-s, --status=S_ID,ARG,...`  
+#### `-s, --status=S_ID,ARG,...`  
   Calculates the status of the point cloud based on the given factors.  
   - `S_ID`: An interger identifier of the status calculation method.  
   - `ARG,...`: Arguments for the calculation.  
