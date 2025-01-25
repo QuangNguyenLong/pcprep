@@ -77,7 +77,7 @@ The `pcp` program processes point cloud data from a source file and generates on
   - `ARG,...`: Arguments for the calculation.  
   Example: `-s 2,factor1,factor2`
 
-#### Screen area status (P_ID = 0)
+#### Screen area status (S_ID = 0)
 Still working ...
 
 ---
