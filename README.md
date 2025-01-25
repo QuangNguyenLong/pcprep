@@ -1,23 +1,38 @@
 # Point cloud preparation tool
 
-## Dependency
-The tool is built using Cmake >= 3.0 and GNU make. 
+## Requirements
+The following package is required to build the Point cloud preparation tool:
+* cmake >= 3.0
+* make
+* libglm-dev >= 0.9.9.7
 
-### Linux user
-* OpenGL Mathematics (GLM):
-<br/>`sudo apt-get install -y libglm-dev`<br/>
+## Building
+Bash scripts can be use to build pcprep project:
 
-## Compilation
+* scripts/build.sh: build solutions.
 
-In project's root directory:
+### Linux
 ```shell
 mkdir build
 cd build
-cmake ../
+cmake ..
 make
 ```
 
 All programs are placed in `bin`.   
+
+
+## Point Cloud Prepare (`pcp`)
+
+```shell
+./bin/pcp \
+    --process=0,0.5,0 \
+    --tile=2,2,2 \
+    --input=longdress0000.ply \
+    --output=tile%04d.ply
+```
+
+More infomations could be found in the [user manual](doc/README.usage.md).
 
 ## Examples
 ### Tiling
@@ -43,7 +58,7 @@ subsampling longdress0000.ply 0.5 ouput.ply
 
 ### Screen area
 
-This program is currently still in development. This function print the screen proportion (estimated by the bounding box) of the 8 tiles given by upper "tilling" example command.
+This program is currently in development. This program print the screen proportion (estimated by the bounding box) of the 8 tiles given by upper "tilling" example command.
 
 <br/>`screen_area`<br/>
 
@@ -51,7 +66,3 @@ For example:
 ```shell
 screen_area
 ```
-
-## pcprep app
-
-This tools is currently still in development.

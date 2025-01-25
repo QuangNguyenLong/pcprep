@@ -14,6 +14,8 @@ ${PROJECT_SOURCE_DIR}/src/miniply/*.cpp
 )
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DABC")
+set(CMAKE_EXE_LINKER_FLAGS "-static")
+
 
 set(PC_IO_DIR ${PROJECT_SOURCE_DIR}/examples/pc_io)
 set(PC_IO_SOURCE ${PCPREP_SHARED_SOURCE} ${PC_IO_DIR}/pc_io.c)
@@ -47,10 +49,10 @@ set_target_properties(screen_area PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin
 )
 
-set(PCPREP_DIR ${PROJECT_SOURCE_DIR}/pcprep)
-set(PCPREP_SOURCE ${PCPREP_SHARED_SOURCE} ${PCPREP_DIR}/main.c)
-add_executable(pcprep ${PCPREP_SOURCE})
-# target_link_libraries(pcprep pthread)
-set_target_properties(pcprep PROPERTIES
+set(PCP_DIR ${PROJECT_SOURCE_DIR}/pcp)
+set(PCP_SOURCE ${PCPREP_SHARED_SOURCE} ${PCP_DIR}/pcp.c)
+add_executable(pcp ${PCP_SOURCE})
+# target_link_libraries(pcp pthread)
+set_target_properties(pcp PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin
 )

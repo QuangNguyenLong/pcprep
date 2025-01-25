@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
     pointcloud_load(&pc, input_file_path);
     pointcloud_t *tiles;
-    pointcloud_tiling(&pc, n_x, n_y, n_z, &tiles);
+    pointcloud_tile(&pc, n_x, n_y, n_z, &tiles);
 
     struct stat st = {0};
 

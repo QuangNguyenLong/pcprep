@@ -1,6 +1,8 @@
 #include "pcprep/pointcloud.h"
 #include "pcprep/wrapper.h"
 #include "pcprep/vec3f.h"
+#include "pcprep/sample.h"
+#include <time.h>
 #include <stdio.h>
 
 #define MSH_PLY_INCLUDE_LIBC_HEADERS
@@ -15,6 +17,16 @@ int pointcloud_init(pointcloud_t *pc, size_t size)
     pc->pos = (float *)malloc(sizeof(float) * 3 * pc->size);
     pc->rgb = (uint8_t *)malloc(sizeof(uint8_t) * 3 * pc->size);
     return pc->size;
+}
+int pointcloud_free(pointcloud_t *pc)
+{
+    if (pc == NULL)
+        return 1;
+    if (pc->pos)
+        free(pc->pos);
+    if (pc->rgb)
+        free(pc->rgb);
+    return 1; 
 }
 int pointcloud_load(pointcloud_t *pc, const char *filename)
 {
@@ -134,11 +146,11 @@ int get_tile_id(vec3f_t n, vec3f_t min, vec3f_t max, vec3f_t v)
 }
 
 // TODO: this function is not safe
-int pointcloud_tiling(pointcloud_t *pc,
-                      int n_x,
-                      int n_y,
-                      int n_z,
-                      pointcloud_t **tiles)
+int pointcloud_tile(pointcloud_t *pc,
+                    int n_x,
+                    int n_y,
+                    int n_z,
+                    pointcloud_t **tiles)
 {
     vec3f_t min, max;
     vec3f_t *pos_lst = (vec3f_t *)pc->pos;
@@ -147,7 +159,6 @@ int pointcloud_tiling(pointcloud_t *pc,
 
     int *numVerts = (int *)malloc(sizeof(int) * size);
     int *tmp = (int *)malloc(sizeof(int) * size);
-
     *tiles = (pointcloud_t *)malloc(sizeof(pointcloud_t) * size);
 
     pointcloud_min(pc, &min);
@@ -185,4 +196,46 @@ int pointcloud_tiling(pointcloud_t *pc,
     free(tmp);
 
     return size;
+}
+
+int pointcloud_sample(pointcloud_t *pc,
+                      float ratio, 
+                      unsigned char strategy,
+                      pointcloud_t **out)
+{
+    size_t num_points = (size_t)(pc->size * ratio);
+
+    *out = (pointcloud_t *)malloc(sizeof(pointcloud_t));
+    (*out)->pos = NULL;
+    (*out)->rgb = NULL;
+    (*out)->size = 0;
+
+    pointcloud_init(*out, num_points);
+
+    switch (strategy)
+    {
+    case PCP_SAMPLE_RULE_UNIFORM:
+    {
+        int *index_arr = (int *)malloc(sizeof(int) * pc->size);
+        int *sample = (int *)malloc(num_points * sizeof(int));
+        // Seed the random number generator
+        srand((unsigned int)time(NULL)); 
+        for (int i = 0; i < pc->size; i++)
+            index_arr[i] = i;
+        sample_union(index_arr, pc->size, sample, num_points);
+        for (int i = 0; i < num_points; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                (*out)->pos[i * 3 + j] = pc->pos[sample[i] * 3 + j];
+                (*out)->rgb[i * 3 + j] = pc->rgb[sample[i] * 3 + j];
+            }
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    
+    return 1;
 }

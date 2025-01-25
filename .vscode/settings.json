@@ -47,6 +47,10 @@
         "msh_ply.h": "c",
         "stat.h": "c",
         "types.h": "c",
-        "unordered_map": "cpp"
+        "unordered_map": "cpp",
+        "pcprep.h": "c",
+        "sample.h": "c",
+        "stdio.h": "c",
+        "time.h": "c"
     }
 }

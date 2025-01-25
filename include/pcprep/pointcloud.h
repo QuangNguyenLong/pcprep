@@ -10,6 +10,7 @@ extern "C"
 #include <stdint.h>
 #include "pcprep/vec3f.h"
 
+
 typedef struct pointcloud_t
 {
     float *pos;
@@ -18,17 +19,21 @@ typedef struct pointcloud_t
 } pointcloud_t;
 
 int pointcloud_init(pointcloud_t *pc, size_t size);
+int pointcloud_free(pointcloud_t *pc);
 int pointcloud_load(pointcloud_t *pc, const char *filename);
 int pointcloud_write(pointcloud_t *pc, const char *filename, int binary);
 int pointcloud_min(pointcloud_t *pc, vec3f_t *min);
 int pointcloud_max(pointcloud_t *pc, vec3f_t *max);
 int get_tile_id(vec3f_t n, vec3f_t min, vec3f_t max, vec3f_t v);
-int pointcloud_tiling(pointcloud_t *pc,
-                      int n_x,
-                      int n_y,
-                      int n_z,
-                      pointcloud_t **tiles);
-
+int pointcloud_tile(pointcloud_t *pc,
+                    int n_x,
+                    int n_y,
+                    int n_z,
+                    pointcloud_t **tiles);
+int pointcloud_sample(pointcloud_t *pc,
+                      float ratio, 
+                      unsigned char strategy,
+                      pointcloud_t **out);
 #ifdef __cplusplus
 }
 #endif
