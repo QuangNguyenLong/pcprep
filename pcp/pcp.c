@@ -181,8 +181,7 @@ const char *argp_program_bug_address = "quang.nglong@gmail.com";
 
 // static char doc[] = "A program that prepare point cloud.";
 static char doc[] = 
-    "Point Cloud Prepare (PCP)\n"
-    "A program that prepare point cloud.\v"
+    "Point Cloud Prepare (PCP) - A program that prepare point cloud.\v"
     "Process Option:\n\n"
     "Sample process (P_ID = 0):\n"
     "[ARG1=FLOAT] Sample ratio compared to input\n"
