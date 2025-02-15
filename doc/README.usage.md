@@ -78,7 +78,7 @@ The `pcp` program processes point cloud data from a source file and generates on
   Calculates the status of the point cloud based on the given factors.  
   - `S_ID`: An interger identifier of the status calculation method.  
   - `ARG,...`: Arguments for the calculation.  
-  Example: `-s 2,factor1,factor2`
+  Example: `-s 0,1,0,bbox%04d.ply`
 
 #### AABB status (S_ID = 0)
 ##### `ARG1=0|1|2`
