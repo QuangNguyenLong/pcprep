@@ -37,8 +37,8 @@ int pointcloud_free(pointcloud_t *pc)
 }
 int pointcloud_load(pointcloud_t *pc, const char *filename)
 {
-    pointcloud_init(pc, ply_count_element(filename));
-    return ply_loader(filename, pc->pos, pc->rgb);
+    pointcloud_init(pc, ply_count_vertex(filename));
+    return ply_pointcloud_loader(filename, pc->pos, pc->rgb);
 }
 int pointcloud_write(pointcloud_t *pc, const char *filename, int binary)
 {

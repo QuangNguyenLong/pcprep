@@ -79,20 +79,21 @@ int pcp_prepare(struct arguments *arg)
             {
             case PCP_PROC_SAMPLE:
             {
-                pcp_sample_arg_t param = {1.0f, 0};
+                pcp_sample_p_arg_t param = {1.0f, 0};
                 float percent = atof(curr->process_arg[0]);
 
                 if(percent > 0.0f && percent < 1.0f)
                     param.ratio = percent;
 
                 param.strategy = atoi(curr->process_arg[1]);
-                
+            
                 printf("[PROCESS] Sample: {ratio:%f,strategy:%d}\n",
-                       param.ratio, 
-                       param.strategy);
-
+                    param.ratio,
+                    param.strategy);
+        
                 for(int t = 0; t < out_count; t++)
                 {
+                    printf("-------Tile %d-------\n", t);
                     pcp_sample_p(&outputs[t], (void *)&param);
                 }
                 break;
@@ -103,6 +104,7 @@ int pcp_prepare(struct arguments *arg)
                 printf("[PROCESS] Voxel: {step_size:%f}\n", step_size);
                 for(int t = 0; t < out_count; t++)
                 {
+                    printf("-------Tile %d-------\n", t);
                     pcp_voxel_p(&outputs[t], (void *)&step_size);
                 }
                 break;
@@ -126,9 +128,24 @@ int pcp_prepare(struct arguments *arg)
             status_t *curr = &(arg->stats[i]);
             switch (curr->status)
             {
-            case PCP_STAT_SCREEN_AREA:
+            case PCP_STAT_AABB:
             {
+                pcp_aabb_s_arg_t param = {0, 0, NULL};
+                param.output = atoi(curr->status_arg[0]);
+                param.binary = atoi(curr->status_arg[1]);
+                param.output_path = curr->status_arg[2];
                 
+                printf("[STATUS] AABB: {output:%d,binary:%d,output_path:%s}\n",
+                    param.output,
+                    param.binary,
+                    param.output_path);
+                    
+                for(int t = 0; t < out_count; t++)
+                {
+                    printf("-------Tile %d-------\n", t);
+                    param.tile_id = t;
+                    pcp_aabb_s(&outputs[t], (void *)&param);
+                }
                 break;
             }
             default:
@@ -145,7 +162,7 @@ int pcp_prepare(struct arguments *arg)
     {
         if (outputs[t].size == 0)
         {
-        printf("Tile %d have no points, skip writing...\n", t);
+            printf("Tile %d have no points, skip writing...\n", t);
         }
     snprintf(tile_path, max_path_size, output_path, t);
     pointcloud_write(&outputs[t], tile_path, binary);

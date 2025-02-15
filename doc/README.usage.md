@@ -80,9 +80,19 @@ The `pcp` program processes point cloud data from a source file and generates on
   - `ARG,...`: Arguments for the calculation.  
   Example: `-s 2,factor1,factor2`
 
-#### Screen area status (S_ID = 0)
-Still working ...
-
+#### AABB status (S_ID = 0)
+##### `ARG1=0|1|2`
+  Specifies how to get the bounding box:
+  - `0` (default): Print on terminal.  
+  - `1`: Save to file(s) (Supported formats: `.ply`).
+  - `2`: Both of the above.
+##### `ARG2=0|1`
+  Specifies the output format:  
+  - `0`: Output in ASCII format.  
+  - `1` (default): Output in binary format.
+##### `ARG3=FILE`
+  Specifies the output file(s). 
+  Example: `bbox%04d.ply` is the output path for multiple output files. 
 ---
 
 
