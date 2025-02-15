@@ -179,7 +179,27 @@ int pcp_prepare(struct arguments *arg)
 const char *argp_program_version = "pcp 0.1";
 const char *argp_program_bug_address = "quang.nglong@gmail.com";
 
-static char doc[] = "A program that prepare point cloud.";
+// static char doc[] = "A program that prepare point cloud.";
+static char doc[] = 
+    "Point Cloud Prepare (PCP)\n"
+    "A program that prepare point cloud.\v"
+    "Process Option:\n\n"
+    "Sample process (P_ID = 0):\n"
+    "[ARG1=FLOAT] Sample ratio compared to input\n"
+    "[ARG2=0|1] Strategy (0=Uniform [default], 1=WIP)\n"
+    "\n"
+    "Voxel process (P_ID = 1):\n"
+    "[ARG1=FLOAT] Step size to voxel the input\n"
+    "\n"
+    "Remove duplicates (P_ID = 2):\n"
+    "No arguments required\n"
+    "\n"
+    "Status Option:\n\n"
+    "AABB status (S_ID = 0):\n"
+    "[ARG1=0|1|2] Output mode (0=terminal, 1=file, 2=both)\n"
+    "[ARG2=0|1] Format (0=ASCII, 1=binary [default])\n"
+    "[ARG3=FILE] Output file (e.g., bbox%04d.ply for multiple files)";
+
 static char args_doc[] = "-i <point-cloud-source-file> -o <output-source-file(s)>";
 
 static struct argp_option options[] = {
