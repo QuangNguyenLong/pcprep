@@ -15,7 +15,7 @@ typedef struct pointcloud_t
 {
     float *pos;
     uint8_t *rgb;
-    size_t size;
+    size_t size; // number of points, *pos have size*3 elements
 } pointcloud_t;
 
 int pointcloud_init(pointcloud_t *pc, size_t size);
@@ -34,6 +34,13 @@ int pointcloud_sample(pointcloud_t *pc,
                       float ratio, 
                       unsigned char strategy,
                       pointcloud_t **out);
+void pointcloud_element_merge(pointcloud_t *pc, int left, int mid, int right);
+void pointcloud_element_merge_sort(pointcloud_t *pc, int left, int right);
+int pointcloud_remove_dupplicates(pointcloud_t *pc,
+                                  pointcloud_t **out);
+int pointcloud_voxel(pointcloud_t *pc,
+                     float voxel_size,
+                     pointcloud_t **out);
 #ifdef __cplusplus
 }
 #endif

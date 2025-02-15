@@ -67,6 +67,9 @@ The `pcp` program processes point cloud data from a source file and generates on
   | 0     | Uniform (default)           |
   | 1     | Still working ...           |
 
+#### Voxel process (P_ID = 1)
+##### `ARG1=FLOAT`
+  Specifies the step size to voxel the input point cloud.
 
 --- 
 

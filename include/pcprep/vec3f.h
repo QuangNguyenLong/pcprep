@@ -4,6 +4,7 @@
 extern "C"
 {
 #endif
+#include <pcprep/core.h>
 #include <math.h>
 typedef struct vec3f_t
 {
@@ -89,17 +90,25 @@ static inline int vec3f_eq(vec3f_t a, vec3f_t b)
 
 static inline int vec3f_g(vec3f_t a, vec3f_t b)
 {
-    return a.x > b.x && a.y > b.y && a.z > b.z;
+    if (a.x < b.x) return 0;
+    if (a.x > b.x) return 1;
+    if (a.y < b.y) return 0;
+    if (a.y > b.y) return 1;
+    return a.z > b.z;
 }
 
 static inline int vec3f_l(vec3f_t a, vec3f_t b)
 {
-    return a.x < b.x && a.y < b.y && a.z < b.z;
+    if (a.x < b.x) return 1;
+    if (a.x > b.x) return 0;
+    if (a.y < b.y) return 1;
+    if (a.y > b.y) return 0;
+    return a.z < b.z;
 }
 
 static inline int vec3f_geq(vec3f_t a, vec3f_t b)
 {
-    return vec3f_g(a, b) || vec3f_eq(a, b);
+   return vec3f_g(a, b) || vec3f_eq(a, b);
 }
 
 static inline int vec3f_leq(vec3f_t a, vec3f_t b)
@@ -111,6 +120,11 @@ static inline vec3f_t vec3f_reflect(vec3f_t v, vec3f_t n)
 {
     float dot = vec3f_dot(v, n);
     return vec3f_sub(v, vec3f_mul_scalar(n, 2 * dot));
+}
+
+static inline vec3f_t vec3f_quantize(vec3f_t v, float q)
+{
+    return (vec3f_t){quantize(v.x, q), quantize(v.y, q), quantize(v.z, q)};
 }
 
 #ifdef __cplusplus

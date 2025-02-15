@@ -1,6 +1,7 @@
-#include <pcprep/sample.h>
+#include <pcprep/core.h>
 #include <time.h>
 #include <stdlib.h>
+#include <math.h>
 
 int sample_union(int *input, 
                  int input_size, 
@@ -18,8 +19,8 @@ int sample_union(int *input,
     {
         return -1;
     }
-
-    srand((unsigned int)time(NULL)); // Seed the random number generator
+    // Seed the random number generator
+    srand((unsigned int)time(NULL)); 
 
     int selected_count = 0;
     while (selected_count < output_size)
@@ -36,3 +37,8 @@ int sample_union(int *input,
 
     free(selected);
 }
+float quantize(float x, float q)
+{
+    return q * floor(x / q + 0.5f);
+}
+

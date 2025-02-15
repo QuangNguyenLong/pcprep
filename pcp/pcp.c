@@ -97,6 +97,16 @@ int pcp_prepare(struct arguments *arg)
                 }
                 break;
             }
+            case PCP_PROC_VOXEL:
+            {
+                float step_size = atof(curr->process_arg[0]);
+                printf("[PROCESS] Voxel: {step_size:%f}\n", step_size);
+                for(int t = 0; t < out_count; t++)
+                {
+                    pcp_voxel_p(&outputs[t], (void *)&step_size);
+                }
+                break;
+            }
             case PCP_PROC_OCTREE:
             {
                 break;
@@ -111,6 +121,22 @@ int pcp_prepare(struct arguments *arg)
     if (arg->flags & SET_OPT_STATUS) 
     {
     // Handle the SET_OPT_STATUS flag
+        for (int i = 0; i < arg->stats_size; i++)
+        {
+            status_t *curr = &(arg->stats[i]);
+            switch (curr->status)
+            {
+            case PCP_STAT_SCREEN_AREA:
+            {
+                
+                break;
+            }
+            default:
+            {
+                break;
+            }
+            }           
+        }
     }
 
     if(out_count == 0)
@@ -127,7 +153,7 @@ int pcp_prepare(struct arguments *arg)
     return out_count;
 }
 
-const char *argp_program_version = "pcp 0.1.1";
+const char *argp_program_version = "pcp 0.1";
 const char *argp_program_bug_address = "quang.nglong@gmail.com";
 
 static char doc[] = "A program that prepare point cloud.";

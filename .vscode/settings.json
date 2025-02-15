@@ -52,5 +52,6 @@
         "sample.h": "c",
         "stdio.h": "c",
         "time.h": "c"
-    }
+    },
+    "CodeGPT.apiKey": "CodeGPT Plus Beta"
 }

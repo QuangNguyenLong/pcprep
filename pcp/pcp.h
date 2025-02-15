@@ -8,7 +8,8 @@
 #define MAX_STATUS 256
 
 #define PCP_PROC_SAMPLE 0x00
-#define PCP_PROC_OCTREE 0x01
+#define PCP_PROC_VOXEL 0x01
+#define PCP_PROC_OCTREE 0x02
 
 #define PCP_STAT_SCREEN_AREA 0x00
 
@@ -60,7 +61,6 @@ unsigned int pcp_sample_p(pointcloud_t     *pc,
                           void             *arg)
 {
     pcp_sample_arg_t *param = (pcp_sample_arg_t *)arg;
-
     pointcloud_t *out;
     pointcloud_sample(pc, param->ratio, param->strategy, &out);
     pointcloud_free(pc);
@@ -70,6 +70,16 @@ unsigned int pcp_sample_p(pointcloud_t     *pc,
     *pc = *out; 
 }
 
+unsigned int pcp_voxel_p(pointcloud_t     *pc,
+                         void             *arg)
+{
+    float step_size = *(float *)arg;
+    pointcloud_t *out;
+    pointcloud_voxel(pc, step_size, &out);
+    pointcloud_free(pc);
+    *pc = *out;
+}
+
 unsigned int pcp_octree_p(pointcloud_t     *pc,
                           void             *arg)
 {
@@ -77,6 +87,7 @@ unsigned int pcp_octree_p(pointcloud_t     *pc,
 }
 
 pcp_process legs_g[MAX_PROCESS] = {pcp_sample_p,
+                                   pcp_voxel_p,      
                                    pcp_octree_p};
 
 

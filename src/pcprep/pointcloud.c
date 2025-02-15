@@ -1,7 +1,8 @@
 #include "pcprep/pointcloud.h"
 #include "pcprep/wrapper.h"
 #include "pcprep/vec3f.h"
-#include "pcprep/sample.h"
+#include "pcprep/vec3uc.h"
+#include "pcprep/core.h"
 #include <time.h>
 #include <stdio.h>
 
@@ -23,10 +24,16 @@ int pointcloud_free(pointcloud_t *pc)
     if (pc == NULL)
         return 1;
     if (pc->pos)
+    {
         free(pc->pos);
+        pc->pos = NULL;
+    }
     if (pc->rgb)
+    {
         free(pc->rgb);
-    return 1; 
+        pc->rgb = NULL;
+    }
+    return 1;
 }
 int pointcloud_load(pointcloud_t *pc, const char *filename)
 {
@@ -199,7 +206,7 @@ int pointcloud_tile(pointcloud_t *pc,
 }
 
 int pointcloud_sample(pointcloud_t *pc,
-                      float ratio, 
+                      float ratio,
                       unsigned char strategy,
                       pointcloud_t **out)
 {
@@ -219,7 +226,7 @@ int pointcloud_sample(pointcloud_t *pc,
         int *index_arr = (int *)malloc(sizeof(int) * pc->size);
         int *sample = (int *)malloc(num_points * sizeof(int));
         // Seed the random number generator
-        srand((unsigned int)time(NULL)); 
+        srand((unsigned int)time(NULL));
         for (int i = 0; i < pc->size; i++)
             index_arr[i] = i;
         sample_union(index_arr, pc->size, sample, num_points);
@@ -236,6 +243,128 @@ int pointcloud_sample(pointcloud_t *pc,
     default:
         break;
     }
-    
+
     return 1;
+}
+
+void pointcloud_element_merge(pointcloud_t *pc, int left, int mid, int right)
+{
+    vec3f_t *arr_pos = (vec3f_t *)pc->pos;
+    vec3uc_t *arr_col = (vec3uc_t *)pc->rgb;
+
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    vec3f_t *L_pos = (vec3f_t *)malloc(n1 * sizeof(vec3f_t));
+    vec3f_t *R_pos = (vec3f_t *)malloc(n2 * sizeof(vec3f_t));
+
+    vec3uc_t *L_col = (vec3uc_t *)malloc(n1 * sizeof(vec3uc_t));
+    vec3uc_t *R_col = (vec3uc_t *)malloc(n2 * sizeof(vec3uc_t));
+
+    for (int i = 0; i < n1; i++)
+    {
+        *(L_pos + i) = arr_pos[left + i];
+        *(L_col + i) = arr_col[left + i];
+    }
+    for (int i = 0; i < n2; i++)
+    {
+        *(R_pos + i) = arr_pos[mid + 1 + i];
+        *(R_col + i) = arr_col[mid + 1 + i];
+    }
+    int i = 0, j = 0, k = left;
+    while (i < n1 && j < n2)
+    {
+        if (vec3f_leq(*(L_pos + i), *(R_pos + j)))
+        {
+            arr_pos[k] = *(L_pos + i);
+            arr_col[k++] = *(L_col + i++);
+        }
+        else
+        {
+            arr_pos[k] = *(R_pos + j);
+            arr_col[k++] = *(R_col + j++);
+        }
+    }
+    while (i < n1)
+    {
+        arr_pos[k] = *(L_pos + i);
+        arr_col[k++] = *(L_col + i++);
+    }
+    while (j < n2)
+    {
+        arr_pos[k] = *(R_pos + j);
+        arr_col[k++] = *(R_col + j++);
+    }
+
+    free(L_pos);
+    free(R_pos);
+    free(L_col);
+    free(R_col);
+}
+void pointcloud_element_merge_sort(pointcloud_t *pc, int left, int right)
+{
+    if (left >= right)
+        return;
+    int mid = left + (right - left) / 2;
+
+    pointcloud_element_merge_sort(pc, left, mid);
+    pointcloud_element_merge_sort(pc, mid + 1, right);
+
+    pointcloud_element_merge(pc, left, mid, right);
+}
+
+int pointcloud_remove_dupplicates(pointcloud_t *pc,
+                                  pointcloud_t **out)
+{
+    // use mergesort to sort points, then remove consecutives, O(Nlog(N))
+    pointcloud_element_merge_sort(pc, 0, pc->size - 1);
+
+    // count unique points to get output size
+    size_t count_unique = 1;
+    for (int i = 1; i < pc->size; i++)
+    {
+        vec3f_t pre = ((vec3f_t *)pc->pos)[i - 1];
+        vec3f_t curr = ((vec3f_t *)pc->pos)[i];
+        if (!vec3f_eq(pre, curr))
+        {
+            count_unique++;
+        }
+    }
+    // init output pc, O(1)
+    *out = (pointcloud_t *)malloc(sizeof(pointcloud_t));
+    (*out)->pos = NULL;
+    (*out)->rgb = NULL;
+    (*out)->size = 0;
+    pointcloud_init(*out, count_unique);
+
+    // puts the unique points into the output, O(N)
+    vec3f_t *uni_pos = (vec3f_t *)((*out)->pos);
+    vec3uc_t *uni_col = (vec3uc_t *)((*out)->rgb);
+    vec3f_t *pos = (vec3f_t *)(pc->pos);
+    vec3uc_t *col = (vec3uc_t *)(pc->rgb);
+
+    int index = 0;
+    for (int i = 1; i < pc->size; i++)
+    {
+        if (!vec3f_eq(pos[i], pos[i - 1]))
+        {
+            uni_pos[index] = pos[i];
+            uni_col[index++] = col[i]; // Start the color for the new point
+        }
+    }
+
+    return (*out)->size;
+}
+
+int pointcloud_voxel(pointcloud_t *pc,
+                     float voxel_size,
+                     pointcloud_t **out)
+{
+    // quantize the points to the voxel grid
+    // then remove the duplicates
+
+    vec3f_t *pos = (vec3f_t *)pc->pos;
+    for (int i = 0; i < pc->size; i++)
+        pos[i] = vec3f_quantize(pos[i], voxel_size);
+    pointcloud_remove_dupplicates(pc, out);
 }

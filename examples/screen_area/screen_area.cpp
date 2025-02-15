@@ -81,8 +81,7 @@ void writeConvexHullToObj(const ConvexHull *hull, const char *filename)
 // V: lookAt point, cam position, up vector
 int main()
 {
-    int screenWidth = 1024;
-    int screenHeight = 768;
+    // cam_pos_x, cam_pos_y, cam_pos_z, look_at_x, look_at_y, look_at_z, up_vector_x, up_vector_y, up_vector_z, FoVy, aspect_ratio  
     glm::vec3 cam_position(50, 500, 1500);
     glm::vec3 look_at_point(50, 500, 0);
     glm::vec3 up_vector(0, 1, 0);
@@ -118,7 +117,7 @@ int main()
         pointcloud_min(&tile[i], &min);
         ConvexHull bbox = createBoundingBoxHull(min, max);
         writeConvexHullToObj(&bbox, out_bbox_path[i]);
-        float screen_area = bbox.Projection_Area(MVP, cam_position, screenWidth, screenHeight);
+        float screen_area = bbox.Projection_Area(MVP, cam_position, 1, 1);
         printf("%f ", screen_area);
     }
 }
