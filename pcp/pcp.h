@@ -10,7 +10,7 @@
 
 #define PCP_PROC_SAMPLE 0x00
 #define PCP_PROC_VOXEL 0x01
-#define PCP_PROC_OCTREE 0x02
+#define PCP_PROC_REMOVE_DUPLICATES 0x02
 
 #define PCP_STAT_AABB 0x00
 #define PCP_STAT_SCREEN_AREA 0x01
@@ -64,7 +64,6 @@ unsigned int pcp_sample_p(pointcloud_t *pc,
 {
     pcp_sample_p_arg_t *param = (pcp_sample_p_arg_t *)arg;
 
-
     pointcloud_t *out;
     pointcloud_sample(pc, param->ratio, param->strategy, &out);
     pointcloud_free(pc);
@@ -85,9 +84,13 @@ unsigned int pcp_voxel_p(pointcloud_t *pc,
     *pc = *out;
 }
 
-unsigned int pcp_octree_p(pointcloud_t *pc,
-                          void *arg)
+unsigned int pcp_remove_dupplicates_p(pointcloud_t *pc,
+                                      void *arg)
 {
+    pointcloud_t *out;
+    pointcloud_remove_dupplicates(pc, &out);
+    pointcloud_free(pc);
+    *pc = *out;
 }
 
 // pcp_process legs_g[MAX_PROCESS] = {pcp_sample_p,
@@ -102,8 +105,6 @@ typedef struct pcp_aabb_s_arg_t
     int tile_id;
 } pcp_aabb_s_arg_t;
 
-
-
 unsigned int pcp_aabb_s(pointcloud_t *pc,
                         void *arg)
 {
@@ -116,7 +117,7 @@ unsigned int pcp_aabb_s(pointcloud_t *pc,
     {
         printf("Min: %f %f %f\n", min.x, min.y, min.z);
         printf("Max: %f %f %f\n", max.x, max.y, max.z);
-        if(param->output == 0)
+        if (param->output == 0)
         {
             return 1;
         }

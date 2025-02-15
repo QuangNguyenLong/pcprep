@@ -71,6 +71,8 @@ The `pcp` program processes point cloud data from a source file and generates on
 ##### `ARG1=FLOAT`
   Specifies the step size to voxel the input point cloud.
 
+#### Remove duplicates process (P_ID = 2)
+
 --- 
 
 ### Status Option
@@ -93,7 +95,7 @@ The `pcp` program processes point cloud data from a source file and generates on
 ##### `ARG3=FILE`
   Specifies the output file(s). 
   Example: `bbox%04d.ply` is the output path for multiple output files. 
-  
+
 ---
 
 

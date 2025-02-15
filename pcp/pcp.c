@@ -109,8 +109,14 @@ int pcp_prepare(struct arguments *arg)
                 }
                 break;
             }
-            case PCP_PROC_OCTREE:
+            case PCP_PROC_REMOVE_DUPLICATES:
             {
+                printf("[PROCESS] Remove dupplicates: \n");
+                for(int t = 0; t < out_count; t++)
+                {
+                    printf("-------Tile %d-------\n", t);
+                    pcp_remove_dupplicates_p(&outputs[t], NULL);
+                }
                 break;
             }
             default:
@@ -139,7 +145,7 @@ int pcp_prepare(struct arguments *arg)
                     param.output,
                     param.binary,
                     param.output_path);
-                    
+
                 for(int t = 0; t < out_count; t++)
                 {
                     printf("-------Tile %d-------\n", t);
