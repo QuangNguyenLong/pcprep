@@ -106,31 +106,34 @@ The `pcp` program processes point cloud data from a source file and generates on
 
 ## Examples
 
-1. **Basic Usage**  
    Import a point cloud and save it to an output file:  
    ```bash
    ./bin/pcp -i input.ply -o output.ply
    ```
 
 2. **Output in Non-Binary Format**  
+
    Disable binary output for the result:  
    ```bash
    ./bin/pcp -b 0 -i input.ply -o output.ply
    ```
 
 3. **Apply a Processing Step**  
+
    Sample a point cloud with halves of the points using uniform rule:  
    ```bash
    ./bin/pcp -p 0,0.5,0 -i input.ply -o output.ply
    ```
 
 4. **Tile the Point Cloud**  
+
    Divide the point cloud into 2x2x2 tiles:  
    ```bash
    ./bin/pcp -i input.ply -o tiles%04d.ply -t 2,2,2
    ```
 
 5. **Combine**
+
    Tile the point cloud and sample the tiles.
    ```bash
    ./bin/pcp \
@@ -141,6 +144,7 @@ The `pcp` program processes point cloud data from a source file and generates on
        --output=tile%04d.ply
    ```
 5. **Sequencing**
+
    Tile the point cloud and voxel then sample the tiles.
    ```bash
    ./bin/pcp \
