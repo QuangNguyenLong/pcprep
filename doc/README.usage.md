@@ -134,7 +134,7 @@ The `pcp` program processes point cloud data from a source file and generates on
 
 5. **Combine**
 
-   Tile the point cloud and sample the tiles.
+   Tile the point cloud and sample the tiles:
    ```bash
    ./bin/pcp \
        --process=sample 0.5 0 \
@@ -145,7 +145,7 @@ The `pcp` program processes point cloud data from a source file and generates on
    ```
 5. **Sequencing**
 
-   Tile the point cloud and voxel then sample the tiles.
+   Tile the point cloud and voxel then sample the tiles:
    ```bash
    ./bin/pcp \
        --process=voxel 3 \
