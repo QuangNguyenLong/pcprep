@@ -20,19 +20,50 @@
 #define SET_OPT_PROCESS 0x0002
 #define SET_OPT_STATUS 0x0004
 
-typedef struct process_t
+typedef struct func_t
 {
-    unsigned char process;
-    char **process_arg;
-    size_t process_arg_size;
-} process_t;
+    unsigned char func_id;
+    char **func_arg;
+    size_t func_arg_size;
+} func_t;
 
-typedef struct status_t
+typedef struct func_info {
+    const char *name;
+    unsigned char func;   // Maps to func_id
+    int min_args;
+    int max_args;
+} func_info_t;
+
+const func_info_t processes_g[] = 
 {
-    unsigned char status;
-    char **status_arg;
-    size_t status_arg_size;
-} status_t;
+    {
+        "sample",
+        PCP_PROC_SAMPLE,
+        2, 2
+    },
+    {
+        "voxel",
+        PCP_PROC_VOXEL,
+        1, 1
+    },
+    {
+        "remove-duplicates",
+        PCP_PROC_REMOVE_DUPLICATES,
+        0, 0
+    },
+    {NULL, 0, 0, 0} 
+};
+
+const func_info_t statuses_g[] = 
+{
+    {
+        "aabb",
+        PCP_STAT_AABB,
+        3, 3,
+    },
+    {NULL, 0, 0, 0} 
+};
+
 
 struct arguments
 {
@@ -42,22 +73,29 @@ struct arguments
     int binary;
     size_t procs_size;
     size_t stats_size;
-    process_t procs[MAX_PROCESS];
-    status_t stats[MAX_STATUS];
+    func_t procs[MAX_PROCESS];
+    func_t stats[MAX_STATUS];
     struct
     {
         uint8_t nx, ny, nz;
     } tile;
 };
 
+
+const func_info_t *find_func(const char *name,
+                             const func_info_t *funcs) 
+{
+    for (const func_info_t *p = funcs; p->name != NULL; p++) 
+        if (strcmp(p->name, name) == 0) 
+            return p;
+    return NULL;
+}
+
 typedef struct pcp_sample_p_arg_t
 {
     float ratio;
     unsigned char strategy;
 } pcp_sample_p_arg_t;
-
-// typedef unsigned int (*pcp_process)(pointcloud_t    *pc,
-//                                     void            *arg);
 
 unsigned int pcp_sample_p(pointcloud_t *pc,
                           void *arg)
@@ -92,10 +130,6 @@ unsigned int pcp_remove_dupplicates_p(pointcloud_t *pc,
     pointcloud_free(pc);
     *pc = *out;
 }
-
-// pcp_process legs_g[MAX_PROCESS] = {pcp_sample_p,
-//                                    pcp_voxel_p,
-//                                    pcp_octree_p};
 
 typedef struct pcp_aabb_s_arg_t
 {

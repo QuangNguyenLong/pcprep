@@ -52,47 +52,51 @@ The `pcp` program processes point cloud data from a source file and generates on
 ---
 
 ### Process Option
-#### `-p, --process=P_ID,ARG,...`  
+#### `-p, --process=PROCESS [<ARG>...]`  
   Defines a specific process to be applied to the point cloud.  
-  - `P_ID`: An interger identifier of the process (0--255).  
-  - `ARG,...`: Arguments for the process.  
-  Example: `-p 0,0.5,0`
-#### Sample process (P_ID = 0)
-##### `ARG1=FLOAT`
+  - `PROCESS`: An string identifier of the process.  
+  - `<ARG>,...`: Arguments for the process.  
+  Example: `--process=sample 0.5 0`, `-p sample 0.5 0`
+
+#### Sample process
+##### `sample <ratio> <binary>`
+ - `ratio=FLOAT`
   Specifies the sample ratio compare to the input point cloud.
-##### `ARG2=0|1`
+- `binary=0|1`
   Strategy for sampling.
   | Value | Description                 |
   |:-----:| ----------------------------|
   | 0     | Uniform (default)           |
   | 1     | Still working ...           |
 
-#### Voxel process (P_ID = 1)
-##### `ARG1=FLOAT`
+#### Voxel process
+##### `voxel <voxel-size>`
+- `voxel-size=FLOAT`
   Specifies the step size to voxel the input point cloud.
 
-#### Remove duplicates process (P_ID = 2)
-
+#### Remove duplicates process
+##### `remove-dupplicates`
 --- 
 
 ### Status Option
-#### `-s, --status=S_ID,ARG,...`  
+#### `-s, --status=STATUS [<ARG>...]`  
   Calculates the status of the point cloud based on the given factors.  
-  - `S_ID`: An interger identifier of the status calculation method.  
-  - `ARG,...`: Arguments for the calculation.  
-  Example: `-s 0,1,0,bbox%04d.ply`
+  - `STATUS`: An string identifier of the status calculation method.  
+  - `<ARG>,...`: Arguments for the calculation.  
+  Example: `--status=aabb 1 0 bbox%04d.ply`,`-s aabb 1 0 bbox%04d.ply`
 
-#### AABB status (S_ID = 0)
-##### `ARG1=0|1|2`
+#### AABB status
+##### `aabb <output> <binary> <output-path>`
+- `output=0|1|2`
   Specifies how to get the bounding box:
   - `0` (default): Print on terminal.  
   - `1`: Save to file(s) (Supported formats: `.ply`).
   - `2`: Both of the above.
-##### `ARG2=0|1`
+- `binary=0|1`
   Specifies the output format:  
   - `0`: Output in ASCII format.  
   - `1` (default): Output in binary format.
-##### `ARG3=FILE`
+- `output-path=FILE`
   Specifies the output file(s). 
   Example: `bbox%04d.ply` is the output path for multiple output files. 
 
@@ -127,10 +131,21 @@ The `pcp` program processes point cloud data from a source file and generates on
    ```
 
 5. **Combine**
-
+   Tile the point cloud and sample the tiles.
    ```bash
    ./bin/pcp \
-       --process=0,0.5,0 \
+       --process=sample 0.5 0 \
+       --tile=2,2,2 \
+       --binary=0 \
+       --input=longdress0000.ply \
+       --output=tile%04d.ply
+   ```
+5. **Sequencing**
+   Tile the point cloud and voxel then sample the tiles.
+   ```bash
+   ./bin/pcp \
+       --process=voxel 3 \
+       --process=sample 0.5 0 \
        --tile=2,2,2 \
        --binary=0 \
        --input=longdress0000.ply \

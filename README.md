@@ -26,8 +26,9 @@ All programs are placed in `bin`.
 
 ```shell
 ./bin/pcp \
-    --process=0,0.5,0 \
+    --process=sample 0.5 0 \
     --tile=2,2,2 \
+    --binary=0 \
     --input=longdress0000.ply \
     --output=tile%04d.ply
 ```
