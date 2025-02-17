@@ -173,9 +173,9 @@ static struct argp_option process_options[] = {
     {"help",                    0, NULL, OPTION_DOC,
     "Give this help list"},
     {"sample",                  0, NULL, OPTION_DOC, 
-    "<ratio> <binary>"},
+    "<ratio=FLOAT> <binary=0|1>"},
     {"voxel",                   0, NULL, OPTION_DOC, 
-    "<voxel-size>"},
+    "<voxel-size=FLOAT>"},
     {"remove-dupplicates",      0, NULL, OPTION_DOC, 
     "No arguments"},
     {0}
@@ -187,7 +187,7 @@ static struct argp_option status_options[] = {
     {"help",                    0, NULL, OPTION_DOC,
     "Give this help list"},
     {"aabb",                    0, NULL, OPTION_DOC, 
-    "<output> <binary> <output-path>"},
+    "<output=0|1|2> <binary=0|1> <output-path=FILE>"},
     {0}
 };
 
