@@ -11,5 +11,5 @@ int main(int argc, char *argv[])
     printf("%lu\n", pc.size);
     printf("%f\n", pc.pos[123]);
 
-    pointcloud_write(&pc, "out_msh.ply", 1);
+    pointcloud_write(pc, "out_msh.ply", 1);
 }

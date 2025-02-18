@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
     pointcloud_load(&pc, input_file_path);
     pointcloud_t *tiles;
-    pointcloud_tile(&pc, n_x, n_y, n_z, &tiles);
+    pointcloud_tile(pc, n_x, n_y, n_z, &tiles);
 
     struct stat st = {0};
 
@@ -45,6 +45,6 @@ int main(int argc, char *argv[])
             printf("Tile %d have no points, skip writing...\n", t);
         }
         snprintf(out_file_name, sizeof(out_file_name), "%s/tile%.04d.ply", out_folder, t);
-        pointcloud_write(&tiles[t], out_file_name, 1);
+        pointcloud_write(tiles[t], out_file_name, 1);
     }
 }

@@ -40,11 +40,11 @@ int pointcloud_load(pointcloud_t *pc, const char *filename)
     pointcloud_init(pc, ply_count_vertex(filename));
     return ply_pointcloud_loader(filename, pc->pos, pc->rgb);
 }
-int pointcloud_write(pointcloud_t *pc, const char *filename, int binary)
+int pointcloud_write(pointcloud_t pc, const char *filename, int binary)
 {
     const char *vertex_attributes[] = {"x", "y", "z",
                                        "red", "green", "blue"};
-    int32_t vertex_count = pc->size;
+    int32_t vertex_count = pc.size;
     if (vertex_count == 0)
         return -1;
 
@@ -54,7 +54,7 @@ int pointcloud_write(pointcloud_t *pc, const char *filename, int binary)
         3,
         MSH_PLY_FLOAT,
         MSH_PLY_INVALID,
-        &pc->pos,
+        &pc.pos,
         NULL,
         &vertex_count,
         0};
@@ -65,7 +65,7 @@ int pointcloud_write(pointcloud_t *pc, const char *filename, int binary)
         3,
         MSH_PLY_UINT8,
         MSH_PLY_INVALID,
-        &pc->rgb,
+        &pc.rgb,
         NULL,
         &vertex_count,
         0};
@@ -82,13 +82,13 @@ int pointcloud_write(pointcloud_t *pc, const char *filename, int binary)
     return vertex_count;
 }
 
-int pointcloud_min(pointcloud_t *pc, vec3f_t *min)
+int pointcloud_min(pointcloud_t pc, vec3f_t *min)
 {
-    if (!pc)
+    if (!pc.pos)
         return -1;
-    vec3f_t *pos_lst = (vec3f_t *)(pc->pos);
+    vec3f_t *pos_lst = (vec3f_t *)(pc.pos);
     *min = pos_lst[0];
-    for (int i = 0; i < pc->size; i++)
+    for (int i = 0; i < pc.size; i++)
     {
         if (pos_lst[i].x < min->x)
             min->x = pos_lst[i].x;
@@ -99,13 +99,13 @@ int pointcloud_min(pointcloud_t *pc, vec3f_t *min)
     }
     return 0;
 }
-int pointcloud_max(pointcloud_t *pc, vec3f_t *max)
+int pointcloud_max(pointcloud_t pc, vec3f_t *max)
 {
-    if (!pc)
+    if (!pc.pos)
         return -1;
-    vec3f_t *pos_lst = (vec3f_t *)(pc->pos);
+    vec3f_t *pos_lst = (vec3f_t *)(pc.pos);
     *max = pos_lst[0];
-    for (int i = 0; i < pc->size; i++)
+    for (int i = 0; i < pc.size; i++)
     {
         if (pos_lst[i].x > max->x)
             max->x = pos_lst[i].x;
@@ -153,20 +153,27 @@ int get_tile_id(vec3f_t n, vec3f_t min, vec3f_t max, vec3f_t v)
 }
 
 // TODO: this function is not safe
-int pointcloud_tile(pointcloud_t *pc,
+int pointcloud_tile(pointcloud_t pc,
                     int n_x,
                     int n_y,
                     int n_z,
                     pointcloud_t **tiles)
 {
     vec3f_t min, max;
-    vec3f_t *pos_lst = (vec3f_t *)pc->pos;
+    vec3f_t *pos_lst = (vec3f_t *)pc.pos;
     vec3f_t n = (vec3f_t){n_x, n_y, n_z};
     int size = n.x * n.y * n.z;
 
     int *numVerts = (int *)malloc(sizeof(int) * size);
     int *tmp = (int *)malloc(sizeof(int) * size);
     *tiles = (pointcloud_t *)malloc(sizeof(pointcloud_t) * size);
+
+    if(!tiles)
+    {
+        free(numVerts);
+        free(tmp);
+        return -1;
+    }
 
     pointcloud_min(pc, &min);
     pointcloud_max(pc, &max);
@@ -176,7 +183,7 @@ int pointcloud_tile(pointcloud_t *pc,
         numVerts[t] = 0;
         tmp[t] = 0;
     }
-    for (int i = 0; i < pc->size; i++)
+    for (int i = 0; i < pc.size; i++)
     {
         int t = get_tile_id(n, min, max, pos_lst[i]);
         numVerts[t]++;
@@ -187,15 +194,15 @@ int pointcloud_tile(pointcloud_t *pc,
         pointcloud_init(&(*tiles)[t], numVerts[t]);
     }
 
-    for (int i = 0; i < pc->size; i++)
+    for (int i = 0; i < pc.size; i++)
     {
         int t = get_tile_id(n, min, max, pos_lst[i]);
-        (*tiles)[t].pos[3 * tmp[t]] = pc->pos[3 * i];
-        (*tiles)[t].pos[3 * tmp[t] + 1] = pc->pos[3 * i + 1];
-        (*tiles)[t].pos[3 * tmp[t] + 2] = pc->pos[3 * i + 2];
-        (*tiles)[t].rgb[3 * tmp[t]] = pc->rgb[3 * i];
-        (*tiles)[t].rgb[3 * tmp[t] + 1] = pc->rgb[3 * i + 1];
-        (*tiles)[t].rgb[3 * tmp[t] + 2] = pc->rgb[3 * i + 2];
+        (*tiles)[t].pos[3 * tmp[t]] = pc.pos[3 * i];
+        (*tiles)[t].pos[3 * tmp[t] + 1] = pc.pos[3 * i + 1];
+        (*tiles)[t].pos[3 * tmp[t] + 2] = pc.pos[3 * i + 2];
+        (*tiles)[t].rgb[3 * tmp[t]] = pc.rgb[3 * i];
+        (*tiles)[t].rgb[3 * tmp[t] + 1] = pc.rgb[3 * i + 1];
+        (*tiles)[t].rgb[3 * tmp[t] + 2] = pc.rgb[3 * i + 2];
         tmp[t]++;
     }
 
@@ -205,37 +212,63 @@ int pointcloud_tile(pointcloud_t *pc,
     return size;
 }
 
-int pointcloud_sample(pointcloud_t *pc,
+int pointcloud_merge(pointcloud_t *pcs, 
+                     size_t pc_count, 
+                     pointcloud_t *out)
+{
+    size_t total_size = 0;
+    for (int i = 0; i < pc_count; i++)
+        total_size += pcs[i].size;
+    if (pointcloud_init(out, total_size) < 0)
+    {
+        return -1; // Memory allocation failed
+    }
+
+    int curr = 0;
+    for (int i = 0; i < pc_count; i++)
+    {
+        memcpy((char *)(out->pos + curr * 3), 
+               (char *)pcs[i].pos,
+               pcs[i].size * 3 * sizeof(float));
+        memcpy((char *)(out->rgb + curr * 3), 
+               (char *)pcs[i].rgb,
+               pcs[i].size * 3 * sizeof(uint8_t));
+        curr += pcs[i].size;
+    }
+    return 1;
+}
+
+int pointcloud_sample(pointcloud_t pc,
                       float ratio,
                       unsigned char strategy,
-                      pointcloud_t **out)
+                      pointcloud_t *out)
 {
-    size_t num_points = (size_t)(pc->size * ratio);
+    size_t num_points = (size_t)(pc.size * ratio);
 
-    *out = (pointcloud_t *)malloc(sizeof(pointcloud_t));
-    (*out)->pos = NULL;
-    (*out)->rgb = NULL;
-    (*out)->size = 0;
+    // out = (pointcloud_t *)malloc(sizeof(pointcloud_t));
+    // out->pos = NULL;
+    // out->rgb = NULL;
+    // out->size = 0;
 
-    pointcloud_init(*out, num_points);
+    pointcloud_init(out, num_points);
 
     switch (strategy)
     {
     case PCP_SAMPLE_RULE_UNIFORM:
     {
-        int *index_arr = (int *)malloc(sizeof(int) * pc->size);
+        int *index_arr = (int *)malloc(sizeof(int) * pc.size);
         int *sample = (int *)malloc(num_points * sizeof(int));
         // Seed the random number generator
         srand((unsigned int)time(NULL));
-        for (int i = 0; i < pc->size; i++)
+        for (int i = 0; i < pc.size; i++)
             index_arr[i] = i;
-        sample_union(index_arr, pc->size, sample, num_points);
+        sample_union(index_arr, pc.size, sample, num_points);
         for (int i = 0; i < num_points; i++)
         {
             for (int j = 0; j < 3; j++)
             {
-                (*out)->pos[i * 3 + j] = pc->pos[sample[i] * 3 + j];
-                (*out)->rgb[i * 3 + j] = pc->rgb[sample[i] * 3 + j];
+                out->pos[i * 3 + j] = pc.pos[sample[i] * 3 + j];
+                out->rgb[i * 3 + j] = pc.rgb[sample[i] * 3 + j];
             }
         }
         break;
@@ -247,10 +280,10 @@ int pointcloud_sample(pointcloud_t *pc,
     return 1;
 }
 
-void pointcloud_element_merge(pointcloud_t *pc, int left, int mid, int right)
+void pointcloud_element_merge(pointcloud_t pc, int left, int mid, int right)
 {
-    vec3f_t *arr_pos = (vec3f_t *)pc->pos;
-    vec3uc_t *arr_col = (vec3uc_t *)pc->rgb;
+    vec3f_t *arr_pos = (vec3f_t *)pc.pos;
+    vec3uc_t *arr_col = (vec3uc_t *)pc.rgb;
 
     int n1 = mid - left + 1;
     int n2 = right - mid;
@@ -301,7 +334,7 @@ void pointcloud_element_merge(pointcloud_t *pc, int left, int mid, int right)
     free(L_col);
     free(R_col);
 }
-void pointcloud_element_merge_sort(pointcloud_t *pc, int left, int right)
+void pointcloud_element_merge_sort(pointcloud_t pc, int left, int right)
 {
     if (left >= right)
         return;
@@ -313,38 +346,38 @@ void pointcloud_element_merge_sort(pointcloud_t *pc, int left, int right)
     pointcloud_element_merge(pc, left, mid, right);
 }
 
-int pointcloud_remove_dupplicates(pointcloud_t *pc,
-                                  pointcloud_t **out)
+int pointcloud_remove_dupplicates(pointcloud_t pc,
+                                  pointcloud_t *out)
 {
     // use mergesort to sort points, then remove consecutives, O(Nlog(N))
-    pointcloud_element_merge_sort(pc, 0, pc->size - 1);
+    pointcloud_element_merge_sort(pc, 0, pc.size - 1);
 
     // count unique points to get output size
     size_t count_unique = 1;
-    for (int i = 1; i < pc->size; i++)
+    for (int i = 1; i < pc.size; i++)
     {
-        vec3f_t pre = ((vec3f_t *)pc->pos)[i - 1];
-        vec3f_t curr = ((vec3f_t *)pc->pos)[i];
+        vec3f_t pre = ((vec3f_t *)pc.pos)[i - 1];
+        vec3f_t curr = ((vec3f_t *)pc.pos)[i];
         if (!vec3f_eq(pre, curr))
         {
             count_unique++;
         }
     }
     // init output pc, O(1)
-    *out = (pointcloud_t *)malloc(sizeof(pointcloud_t));
-    (*out)->pos = NULL;
-    (*out)->rgb = NULL;
-    (*out)->size = 0;
-    pointcloud_init(*out, count_unique);
+    // out = (pointcloud_t *)malloc(sizeof(pointcloud_t));
+    // out->pos = NULL;
+    // out->rgb = NULL;
+    // out->size = 0;
+    pointcloud_init(out, count_unique);
 
     // puts the unique points into the output, O(N)
-    vec3f_t *uni_pos = (vec3f_t *)((*out)->pos);
-    vec3uc_t *uni_col = (vec3uc_t *)((*out)->rgb);
-    vec3f_t *pos = (vec3f_t *)(pc->pos);
-    vec3uc_t *col = (vec3uc_t *)(pc->rgb);
+    vec3f_t *uni_pos = (vec3f_t *)(out->pos);
+    vec3uc_t *uni_col = (vec3uc_t *)(out->rgb);
+    vec3f_t *pos = (vec3f_t *)(pc.pos);
+    vec3uc_t *col = (vec3uc_t *)(pc.rgb);
 
     int index = 0;
-    for (int i = 1; i < pc->size; i++)
+    for (int i = 1; i < pc.size; i++)
     {
         if (!vec3f_eq(pos[i], pos[i - 1]))
         {
@@ -353,18 +386,18 @@ int pointcloud_remove_dupplicates(pointcloud_t *pc,
         }
     }
 
-    return (*out)->size;
+    return out->size;
 }
 
-int pointcloud_voxel(pointcloud_t *pc,
+int pointcloud_voxel(pointcloud_t pc,
                      float voxel_size,
-                     pointcloud_t **out)
+                     pointcloud_t *out)
 {
     // quantize the points to the voxel grid
     // then remove the duplicates
 
-    vec3f_t *pos = (vec3f_t *)pc->pos;
-    for (int i = 0; i < pc->size; i++)
+    vec3f_t *pos = (vec3f_t *)pc.pos;
+    for (int i = 0; i < pc.size; i++)
         pos[i] = vec3f_quantize(pos[i], voxel_size);
     pointcloud_remove_dupplicates(pc, out);
 }

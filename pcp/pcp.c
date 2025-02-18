@@ -7,38 +7,55 @@
 
 int pcp_prepare(struct arguments *arg)
 {
-
-    pointcloud_t        input           = {NULL, NULL, 0};
-    pointcloud_t        *outputs        = NULL;
-    char                *input_path     = NULL;
-    char                *output_path    = NULL;
-    char 		        *tile_path      = NULL;
-    int                 max_path_size   = 0;
-    int                 binary          = 0;
-    int                 out_count       = 0;
+    pointcloud_t        *in_pcs                = NULL;
+    pointcloud_t        *proc_pcs              = NULL;
+    pointcloud_t        *out_pcs               = NULL;
+    char                *input_path            = NULL;
+    char                *output_path           = NULL;
+    char                *output_tile_path      = NULL;
+    char                *input_tile_path       = NULL;
+    int                 max_path_size          = 0;
+    int                 binary                 = 0;
+    int                 proc_count             = 0;
+    int                 in_count               = 0;
+    int                 out_count              = 0;
     
     max_path_size       = SIZE_PATH;
     input_path          = arg->input;
     output_path         = arg->output;
     binary              = arg->binary;
-    tile_path           = malloc(max_path_size * sizeof(char));
+    input_tile_path     = malloc(max_path_size * sizeof(char));
+    output_tile_path    = malloc(max_path_size * sizeof(char));
+    in_count            = arg->tiled_input;
 
-    pointcloud_load(&input, input_path);
-
-    // this needs ERROR control
-    if (arg->flags & SET_OPT_TILE) 
+    in_pcs = (pointcloud_t *)calloc(in_count, sizeof(pointcloud_t));
+    for (int t = 0; t < in_count; t++)
     {
-    // Handle the SET_OPT_TILE flag
-        int 		    nx 	= 0;
-        int 		    ny 	= 0;
-        int 		    nz 	= 0;
-        nx 			    = arg->tile.nx;
-        ny 			    = arg->tile.ny;
-        nz 			    = arg->tile.nz;
-        out_count = pointcloud_tile(&input, nx, ny, nz, &outputs);
+        snprintf(input_tile_path, max_path_size, input_path, t);
+        pointcloud_load(&in_pcs[t], input_tile_path);
+    }
+
+    // this only run if in_count = 1
+    if (in_count == 1 && arg->plan & PCP_PLAN_TILE_NONE) 
+    {
+        int             nx  = 0;
+        int             ny 	= 0;
+        int             nz  = 0;
+        nx              = arg->tile.nx;
+        ny              = arg->tile.ny;
+        nz              = arg->tile.nz;
+        proc_count       = pointcloud_tile(in_pcs[0], nx, ny, nz, &proc_pcs);
+    }
+    else if (in_count > 1 && arg->plan & PCP_PLAN_MERGE_NONE) 
+    {
+        proc_pcs = (pointcloud_t *)malloc(sizeof(pointcloud_t));
+        proc_count = pointcloud_merge(in_pcs, in_count, &proc_pcs[0]);
     }
     else
-        out_count = pointcloud_tile(&input, 1, 1, 1, &outputs); 
+    {
+        proc_pcs = in_pcs;
+        proc_count = in_count;
+    }
 
     if (arg->flags & SET_OPT_PROCESS) 
     {
@@ -62,10 +79,10 @@ int pcp_prepare(struct arguments *arg)
                     param.ratio,
                     param.strategy);
         
-                for(int t = 0; t < out_count; t++)
+                for(int t = 0; t < proc_count; t++)
                 {
                     printf("-------Tile %d-------\n", t);
-                    pcp_sample_p(&outputs[t], (void *)&param);
+                    pcp_sample_p(&proc_pcs[t], (void *)&param);
                 }
                 break;
             }
@@ -73,20 +90,20 @@ int pcp_prepare(struct arguments *arg)
             {
                 float step_size = atof(curr->func_arg[0]);
                 printf("[PROCESS] Voxel: {step_size:%f}\n", step_size);
-                for(int t = 0; t < out_count; t++)
+                for(int t = 0; t < proc_count; t++)
                 {
                     printf("-------Tile %d-------\n", t);
-                    pcp_voxel_p(&outputs[t], (void *)&step_size);
+                    pcp_voxel_p(&proc_pcs[t], (void *)&step_size);
                 }
                 break;
             }
             case PCP_PROC_REMOVE_DUPLICATES:
             {
                 printf("[PROCESS] Remove dupplicates: \n");
-                for(int t = 0; t < out_count; t++)
+                for(int t = 0; t < proc_count; t++)
                 {
                     printf("-------Tile %d-------\n", t);
-                    pcp_remove_dupplicates_p(&outputs[t], NULL);
+                    pcp_remove_dupplicates_p(&proc_pcs[t], NULL);
                 }
                 break;
             }
@@ -117,11 +134,11 @@ int pcp_prepare(struct arguments *arg)
                     param.binary,
                     param.output_path);
 
-                for(int t = 0; t < out_count; t++)
+                for(int t = 0; t < proc_count; t++)
                 {
                     printf("-------Tile %d-------\n", t);
                     param.tile_id = t;
-                    pcp_aabb_s(&outputs[t], (void *)&param);
+                    pcp_aabb_s(&proc_pcs[t], (void *)&param);
                 }
                 break;
             }
@@ -133,18 +150,39 @@ int pcp_prepare(struct arguments *arg)
         }
     }
 
-    if(out_count == 0)
+    if(arg->plan & PCP_PLAN_NONE_MERGE)
+    {
+        out_pcs = (pointcloud_t *)malloc(sizeof(pointcloud_t));
+        out_count = pointcloud_merge(proc_pcs, proc_count, &out_pcs[0]);
+    }
+    else if(arg->plan & PCP_PLAN_NONE_TILE)
+    {
+        int             nx  = 0;
+        int             ny 	= 0;
+        int             nz  = 0;
+        nx              = arg->tile.nx;
+        ny              = arg->tile.ny;
+        nz              = arg->tile.nz;
+        out_count       = pointcloud_tile(*proc_pcs, nx, ny, nz, &out_pcs);
+
+    }
+    else
+    {
+        out_pcs = proc_pcs;
+        out_count = proc_count;
+    }
+    if (proc_count == 0)
         return 0;
     for (int t = 0; t < out_count; t++)
     {
-        if (outputs[t].size == 0)
+        if (out_pcs[t].size == 0)
         {
             printf("Tile %d have no points, skip writing...\n", t);
         }
-    snprintf(tile_path, max_path_size, output_path, t);
-    pointcloud_write(&outputs[t], tile_path, binary);
+    snprintf(output_tile_path, max_path_size, output_path, t);
+    pointcloud_write(out_pcs[t], output_tile_path, binary);
     }
-    return out_count;
+    return proc_count;
 }
 
 const char *argp_program_version = "pcp 0.1";
@@ -153,13 +191,19 @@ const char *argp_program_bug_address = "quang.nglong@gmail.com";
 static char doc[] = "A program that prepare point cloud.";
 static struct argp_option options[] = {
     {"input",           'i',        "FILE",                0, 
-    "Input point cloud source file (current support Polygon File Format)."},
+    "Input point cloud source file(s) (current support Polygon File Format)."},
     {"output",          'o',        "FILE",                0, 
     "Output point cloud source file(s) (current support Polygon File Format)."},
     {"binary",          'b',        "0|1",                 0, 
-    "output binary or not (0 for not, default is 1)."},
+    "Output binary or not (0 for not, default is 1)."},
+    {"pre-process",     0x80,       "ACTION",              0, 
+    "Set the pre-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is TILE). If the input are file path to point cloud tiles, ACTION can only be MERGE or NONE."},
+    {"post-process",    0x81,       "ACTION",              0, 
+    "Set the post-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is NONE). Post-process ACTION must be different from pre-process ACTION."},
+    {"tiled-input",     0x82,       "NUM",                 0, 
+    "Input NUM point cloud tiles (1 for normal input, default is 1)."},
     {"tile",            't',        "nx,ny,nz",            0, 
-    "set number of division per axis (default is 1,1,1)."},
+    "Set the number of division per axis for tiling (default is 1,1,1)."},
     {"process",         'p',        "PROCESS",             0,
     "Process which the point cloud undergo, use '--process help' for more info."},
     {"status",          's',        "STATUS",              0,
@@ -253,18 +297,67 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     
     switch (key) {
         case 'i':
+            // add safe input
             args->input = arg;
             break;
             
         case 'o':
+            // add safe input
             args->output = arg;
             break;
             
         case 'b':
+            // add safe input
             args->binary = atoi(arg);
             break;
-            
+        case 0x80:
+        {
+            if(strcmp(arg, "TILE") == 0)
+            {
+                args->plan |= PCP_PLAN_TILE_NONE;
+            }
+            else if(strcmp(arg, "MERGE") == 0)
+            {
+                args->plan |= PCP_PLAN_MERGE_NONE;
+            }
+            else if(strcmp(arg, "NONE") == 0)
+            {
+                args->plan |= PCP_PLAN_NONE_NONE;
+            }
+            else
+            {
+                argp_error(state, "Invalid plan format. Use: TILE, MERGE, or NONE");
+                return ARGP_ERR_UNKNOWN;
+            }
+            break;
+        }
+        case 0x81:
+        {
+            if(strcmp(arg, "TILE") == 0)
+            {
+                args->plan |= PCP_PLAN_NONE_TILE;
+            }
+            else if(strcmp(arg, "MERGE") == 0)
+            {
+                args->plan |= PCP_PLAN_NONE_MERGE;
+            }
+            else if(strcmp(arg, "NONE") == 0)
+            {
+                args->plan |= PCP_PLAN_NONE_NONE;
+            }
+            else
+            {
+                argp_error(state, "Invalid plan format. Use: TILE, MERGE, or NONE");
+                return ARGP_ERR_UNKNOWN;
+            }
+            break;
+        }
+        case 0x82:
+            // add safe input
+            args->tiled_input = atoi(arg);
+            break;
         case 't':
+        {
             if (sscanf(arg, "%hhu,%hhu,%hhu", 
                       &args->tile.nx, 
                       &args->tile.ny, 
@@ -272,9 +365,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
                 argp_error(state, "Invalid tile format. Use: nx,ny,nz");
                 return ARGP_ERR_UNKNOWN;
             }
-            args->flags |= SET_OPT_TILE;
             break;
-            
+        }
         case 'p': 
         {
             parse_func_opt(arg,
@@ -314,7 +406,19 @@ static struct argp argp = {options, parse_opt, 0, doc};
 
 int main(int argc, char *argv[]) 
 {
-    struct arguments args = {0, NULL, NULL, 1, 0, 0};
+    // default param for args
+    struct arguments args = (struct arguments)
+    {
+        .flags = 0,
+        .input = NULL,
+        .output = NULL,
+        .binary = 1,
+        .tiled_input = 1,
+        .plan = PCP_PLAN_TILE_NONE,
+        .procs_size = 0,
+        .stats_size = 0,
+        .tile = {1, 1, 1}
+    };
 
     argp_parse(&argp, argc, argv, 0, 0, &args);
 

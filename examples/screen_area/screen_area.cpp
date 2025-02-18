@@ -113,11 +113,19 @@ int main()
     {
         pointcloud_load(&tile[i], tile_path[i]);
         vec3f_t max, min;
-        pointcloud_max(&tile[i], &max);
-        pointcloud_min(&tile[i], &min);
+        pointcloud_max(tile[i], &max);
+        pointcloud_min(tile[i], &min);
         ConvexHull bbox = createBoundingBoxHull(min, max);
         writeConvexHullToObj(&bbox, out_bbox_path[i]);
         float screen_area = bbox.Projection_Area(MVP, cam_position, 1, 1);
-        printf("%f ", screen_area);
+        printf("%f \n", screen_area);
+        for(int i=0;i<4;i++)
+        {
+            for(int j = 0;j < 4;j++)
+            {
+                printf("%.02f ", MVP[i][j]);
+            }
+            printf("\n");
+        }
     }
 }

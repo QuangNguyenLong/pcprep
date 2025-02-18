@@ -79,5 +79,5 @@ int main(int argc, char *argv[])
             sub.rgb[i * 3 + j] = pc.rgb[sample[i] * 3 + j];
         }
     }
-    pointcloud_write(&sub, argv[3], 1);
+    pointcloud_write(sub, argv[3], 1);
 }

@@ -15,10 +15,17 @@
 #define PCP_STAT_AABB 0x00
 #define PCP_STAT_SCREEN_AREA 0x01
 
+#define PCP_PLAN_NONE_NONE 0x00
+#define PCP_PLAN_NONE_TILE 0x01
+#define PCP_PLAN_NONE_MERGE 0x02
+#define PCP_PLAN_TILE_NONE 0x10
+#define PCP_PLAN_TILE_MERGE 0x12
+#define PCP_PLAN_MERGE_NONE 0x20
+#define PCP_PLAN_MERGE_TILE 0x21
+
 #define SIZE_PATH 0xffff
-#define SET_OPT_TILE 0x0001
-#define SET_OPT_PROCESS 0x0002
-#define SET_OPT_STATUS 0x0004
+#define SET_OPT_PROCESS 0x0001
+#define SET_OPT_STATUS 0x0002
 
 typedef struct func_t
 {
@@ -71,6 +78,8 @@ struct arguments
     char *input;
     char *output;
     int binary;
+    int tiled_input;
+    unsigned char plan;
     size_t procs_size;
     size_t stats_size;
     func_t procs[MAX_PROCESS];
@@ -102,13 +111,10 @@ unsigned int pcp_sample_p(pointcloud_t *pc,
 {
     pcp_sample_p_arg_t *param = (pcp_sample_p_arg_t *)arg;
 
-    pointcloud_t *out;
-    pointcloud_sample(pc, param->ratio, param->strategy, &out);
+    pointcloud_t out = {NULL, NULL, 0};
+    pointcloud_sample(*pc, param->ratio, param->strategy, &out);
     pointcloud_free(pc);
-    // pc = out is wrong, pc is the pass-by-value pointer
-    // which point to the real point cloud,
-    // *pc is the referenced point cloud
-    *pc = *out;
+    *pc = out;
 }
 
 unsigned int pcp_voxel_p(pointcloud_t *pc,
@@ -116,19 +122,19 @@ unsigned int pcp_voxel_p(pointcloud_t *pc,
 {
     float step_size = *(float *)arg;
 
-    pointcloud_t *out;
-    pointcloud_voxel(pc, step_size, &out);
+    pointcloud_t out = {NULL, NULL, 0};
+    pointcloud_voxel(*pc, step_size, &out);
     pointcloud_free(pc);
-    *pc = *out;
+    *pc = out;
 }
 
 unsigned int pcp_remove_dupplicates_p(pointcloud_t *pc,
                                       void *arg)
 {
-    pointcloud_t *out;
-    pointcloud_remove_dupplicates(pc, &out);
+    pointcloud_t out = {NULL, NULL, 0};
+    pointcloud_remove_dupplicates(*pc, &out);
     pointcloud_free(pc);
-    *pc = *out;
+    *pc = out;
 }
 
 typedef struct pcp_aabb_s_arg_t
@@ -145,8 +151,8 @@ unsigned int pcp_aabb_s(pointcloud_t *pc,
     pcp_aabb_s_arg_t *param = (pcp_aabb_s_arg_t *)arg;
 
     vec3f_t min, max;
-    pointcloud_min(pc, &min);
-    pointcloud_max(pc, &max);
+    pointcloud_min(*pc, &min);
+    pointcloud_max(*pc, &max);
     if (param->output == 0 || param->output == 2)
     {
         printf("Min: %f %f %f\n", min.x, min.y, min.z);
