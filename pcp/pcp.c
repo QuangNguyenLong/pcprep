@@ -199,7 +199,7 @@ static struct argp_option options[] = {
     {"pre-process",     0x80,       "ACTION",              0, 
     "Set the pre-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is TILE). If the input are file path to point cloud tiles, ACTION can only be MERGE or NONE."},
     {"post-process",    0x81,       "ACTION",              0, 
-    "Set the post-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is NONE). Post-process ACTION must be different from pre-process ACTION."},
+    "Set the post-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is NONE). Post-process ACTION must be different from pre-process ACTION, except for action NONE."},
     {"tiled-input",     0x82,       "NUM",                 0, 
     "Input NUM point cloud tiles (1 for normal input, default is 1)."},
     {"tile",            't',        "nx,ny,nz",            0, 
