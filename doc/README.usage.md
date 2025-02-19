@@ -12,7 +12,56 @@ The **Point Cloud Prepare (PCP)** is a command-line tool designed for preparing,
 
 ### Description
 
-The `pcp` program processes point cloud data from a source file and generates one or more output files based on specified options. It supports customizable processing steps, status calculations, and tiling configurations.
+The `pcp` program processes point cloud (tiles) data from a source file and generates one or more output files based on specified options. It supports customizable processing steps, status calculations, and tiling/merging configurations.
+
+
+                    Point Cloud (tiles)                                       
+                                |                                            
+                                v                                            
+      +------------------------------------------------+                       
+      |                  Pre-process                   |                       
+      |             (TILE, MERGE, or NONE)             |                       
+      +------------------------------------------------+                       
+            |                |                    |                                            
+            v                v                    v                        
+          tile#1           tile#2               tile#T                           
+            |                |                    |                        
+            v                v                    v                       
+    +--------------+ +--------------+     +--------------+                                   
+    |   Process#1  | |   Process#1  | ... |   Process#1  |                            
+    +--------------+ +--------------+     +--------------+                                  
+            |                |                    |                                       
+            v                v                    v                                       
+           ...              ...                  ...                                       
+            |                |                    |                                       
+            v                v                    v                                       
+    +--------------+ +--------------+     +--------------+                                  
+    |   Process#N  | |   Process#N  | ... |   Process#N  |                                  
+    +--------------+ +--------------+     +--------------+                                  
+            |                |                    |                                       
+            v                v                    v                                       
+    +--------------+ +--------------+     +--------------+                                  
+    |   Status#1   | |   Status#1   | ... |   Status#1   |                                  
+    +--------------+ +--------------+     +--------------+                                  
+            |                |                    |                                       
+            v                v                    v                                       
+           ...              ...                  ...                                       
+            |                |                    |                                       
+            v                v                    v                                       
+    +--------------+ +--------------+     +--------------+                                  
+    |   Status#M   | |   Status#M   | ... |   Status#M   |                                  
+    +--------------+ +--------------+     +--------------+                                  
+            |                |                    |                                       
+            v                v                    v                                       
+      +------------------------------------------------+                       
+      |                  Post-process                  |                       
+      |             (TILE, MERGE, or NONE)             |                       
+      +------------------------------------------------+                       
+                              |                                             
+                              v                                            
+                        Output File(s)                                         
+
+
 
 ---
 
@@ -25,8 +74,11 @@ The `pcp` program processes point cloud data from a source file and generates on
   - `1` (default): Output in binary format.
 
 #### `-i, --input=FILE`  
-  Specifies the input point cloud source file.  
+  Specifies the input point cloud (tiles) source file.  
   - Supported formats: Polygon File Format (`.ply`).
+  Example: `tiles%04d.ply` is the input file path for a set of point cloud tiles.
+  Example: `longdress0000.ply` is the input file path for a point cloud.
+  
 
 #### `-o, --output=FILE`  
   Specifies the output file(s). 
@@ -43,17 +95,37 @@ The `pcp` program processes point cloud data from a source file and generates on
 
 ---
 
+### Set pre-process action Option 
+#### `--pre-process=ACTION`
+
+Set the pre-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is TILE). If the input are file path to point cloud tiles, ACTION can only be MERGE or NONE.
+  - `TILE`: Tile the point cloud into multiple tiles before performing any process/status. 
+  - `MERGE`: Merge the point cloud tiles into one point cloud before performing any process/status. 
+  - `NONE`: Do nothing to the point cloud (tiles) before performing any process/status.
+
+### Set post-process action Option 
+#### `--post-process=ACTION`
+Set the post-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is NONE). Post-process ACTION must be different from pre-process ACTION, except for action NONE.
+  - `TILE`: Tile the point cloud into multiple tiles after done performing all process(es)/status(es). 
+  - `MERGE`: Merge the point cloud tiles into one point cloud after done performing all process(es)/status(es). 
+  - `NONE`: Do nothing to the point cloud (tiles) after done performing all process(es)/status(es).
+
 ### Tiling Option
 #### `-t, --tile=nx,ny,nz`  
-  Divides the point cloud into a grid of tiles along each axis, the **tile** option is performed first, before **process** and **status** option.  
+  Set the number of division per axis for TILE action.
   - `nx, ny, nz`: Number of divisions along the x, y, and z axes.  
   - Example: `2,2,2`.
+
+### Tiled-input Option
+#### `--tiled-input=NUM`
+   Specified `NUM` point cloud tiles if the input are point cloud tiles.
+   - `NUM`: Number of point cloud tiles input (1 for normal input, default is 1).
 
 ---
 
 ### Process Option
 #### `-p, --process=PROCESS [<ARG>...]`  
-  Defines a specific process to be applied to the point cloud.  
+  Defines a specific process to be applied to the input point cloud.  
   - `PROCESS`: An string identifier of the process.  
   - `<ARG>,...`: Arguments for the process.  
   Example: `--process=sample 0.5 0`, `-p sample 0.5 0`
@@ -61,7 +133,7 @@ The `pcp` program processes point cloud data from a source file and generates on
 #### Sample process
 ##### `sample <ratio> <binary>`
  - `ratio=FLOAT`
-  Specifies the sample ratio compare to the input point cloud.
+  Specifies the sample ratio compare to the processing point cloud.
 - `binary=0|1`
   Strategy for sampling.
   | Value | Description                 |
@@ -72,15 +144,17 @@ The `pcp` program processes point cloud data from a source file and generates on
 #### Voxel process
 ##### `voxel <voxel-size>`
 - `voxel-size=FLOAT`
-  Specifies the step size to voxel the input point cloud.
+  Specifies the step size to voxel the processing point cloud.
 
 #### Remove duplicates process
 ##### `remove-dupplicates`
+  Remove dupplicated point in the processing point cloud.
+
 --- 
 
 ### Status Option
 #### `-s, --status=STATUS [<ARG>...]`  
-  Calculates the status of the point cloud based on the given factors.  
+  Calculates the status of the input point cloud based on the given factors.  
   - `STATUS`: An string identifier of the status calculation method.  
   - `<ARG>,...`: Arguments for the calculation.  
   Example: `--status=aabb 1 0 bbox%04d.ply`,`-s aabb 1 0 bbox%04d.ply`
@@ -100,11 +174,24 @@ The `pcp` program processes point cloud data from a source file and generates on
   Specifies the output file(s). 
   Example: `bbox%04d.ply` is the output path for multiple output files. 
 
+
+#### Viewport status
+##### `save-viewport <camera=JSON> <background-color=R,G,B> <output-png(s)=FILE>`
+This status is only available if **PCP** was built with `--with-gl --with-png --with-glfw --with-glew` 
+- `camera=JSON`
+  Specifies the JSON file path of the camera trajectory in MVP matrix. An example JSON can be found [here](../examples/cam2mat/cam-matrix.json).
+- `background-color=R,G,B`
+  Specifies the background color for the viewport in RGB.
+  - Example: `255,255,255` for black.
+- `output-png(s)=FILE`
+  Specifies the output png(s) for each processing point cloud. 
+  - Example: `tile%04d.view%04d.png`, whereas the first `%04d` is for tile index, second `%04d` is for viewport index (if the input JSON have multiple MVP matrixes).
+
 ---
 
 
 
-## Examples
+## Examples usage
 
    Import a point cloud and save it to an output file:  
    ```bash

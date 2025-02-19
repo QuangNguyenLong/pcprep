@@ -21,7 +21,8 @@ typedef struct mesh_t
 int mesh_init(mesh_t* mesh, uint32_t num_verts, uint32_t num_indices);
 int mesh_free(mesh_t* mesh);
 int mesh_load(mesh_t* mesh, const char* filename);
-int mesh_write(mesh_t* mesh, const char* filename, int binary);
+int mesh_write(mesh_t mesh, const char* filename, int binary);
+int mesh_screen_ratio(mesh_t mesh, float* MVP, float* screen_area);
 
 #ifdef __cplusplus
 }

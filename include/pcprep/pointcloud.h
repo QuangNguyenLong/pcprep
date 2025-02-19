@@ -48,8 +48,13 @@ int pointcloud_sample(pointcloud_t pc,
                       unsigned char strategy,
                       pointcloud_t *out);
 
-void pointcloud_element_merge(pointcloud_t pc, int left, int mid, int right);
-void pointcloud_element_merge_sort(pointcloud_t pc, int left, int right);
+static void pointcloud_element_merge(pointcloud_t pc, 
+                                     int left, 
+                                     int mid, 
+                                     int right);
+static void pointcloud_element_merge_sort(pointcloud_t pc,
+                                          int left, 
+                                          int right);
 // `output` should be passed as a reference to a pointcloud_t
 int pointcloud_remove_dupplicates(pointcloud_t pc,
                                   pointcloud_t *out);

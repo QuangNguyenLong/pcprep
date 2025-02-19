@@ -6,9 +6,12 @@
 #include <time.h>
 #include <stdio.h>
 
+
 #define MSH_PLY_INCLUDE_LIBC_HEADERS
 #define MSH_PLY_IMPLEMENTATION
 #include <msh_ply.h>
+
+
 
 int pointcloud_init(pointcloud_t *pc, size_t size)
 {
@@ -245,11 +248,6 @@ int pointcloud_sample(pointcloud_t pc,
 {
     size_t num_points = (size_t)(pc.size * ratio);
 
-    // out = (pointcloud_t *)malloc(sizeof(pointcloud_t));
-    // out->pos = NULL;
-    // out->rgb = NULL;
-    // out->size = 0;
-
     pointcloud_init(out, num_points);
 
     switch (strategy)
@@ -280,7 +278,7 @@ int pointcloud_sample(pointcloud_t pc,
     return 1;
 }
 
-void pointcloud_element_merge(pointcloud_t pc, int left, int mid, int right)
+static void pointcloud_element_merge(pointcloud_t pc, int left, int mid, int right)
 {
     vec3f_t *arr_pos = (vec3f_t *)pc.pos;
     vec3uc_t *arr_col = (vec3uc_t *)pc.rgb;
@@ -334,7 +332,7 @@ void pointcloud_element_merge(pointcloud_t pc, int left, int mid, int right)
     free(L_col);
     free(R_col);
 }
-void pointcloud_element_merge_sort(pointcloud_t pc, int left, int right)
+static void pointcloud_element_merge_sort(pointcloud_t pc, int left, int right)
 {
     if (left >= right)
         return;
@@ -345,6 +343,7 @@ void pointcloud_element_merge_sort(pointcloud_t pc, int left, int right)
 
     pointcloud_element_merge(pc, left, mid, right);
 }
+
 
 int pointcloud_remove_dupplicates(pointcloud_t pc,
                                   pointcloud_t *out)
@@ -363,11 +362,6 @@ int pointcloud_remove_dupplicates(pointcloud_t pc,
             count_unique++;
         }
     }
-    // init output pc, O(1)
-    // out = (pointcloud_t *)malloc(sizeof(pointcloud_t));
-    // out->pos = NULL;
-    // out->rgb = NULL;
-    // out->size = 0;
     pointcloud_init(out, count_unique);
 
     // puts the unique points into the output, O(N)

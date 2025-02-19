@@ -1,6 +1,8 @@
 #ifndef PCP_H
 #define PCP_H
 
+// #define WITH_GLEW_GL_PNG
+#include <pcprep/graphic.h>
 #include <pcprep/pointcloud.h>
 #include <pcprep/aabb.h>
 #include <stdint.h>
@@ -14,6 +16,9 @@
 
 #define PCP_STAT_AABB 0x00
 #define PCP_STAT_SCREEN_AREA 0x01
+#ifdef WITH_GRAPHIC
+#define PCP_STAT_SAVE_VIEWPORT 0x02
+#endif
 
 #define PCP_PLAN_NONE_NONE 0x00
 #define PCP_PLAN_NONE_TILE 0x01
@@ -68,6 +73,13 @@ const func_info_t statuses_g[] =
         PCP_STAT_AABB,
         3, 3,
     },
+#ifdef PCP_STAT_SAVE_VIEWPORT
+    {
+        "save-viewport",
+        PCP_STAT_SAVE_VIEWPORT,
+        3, 3,
+    },
+#endif
     {NULL, 0, 0, 0} 
 };
 
@@ -89,6 +101,27 @@ struct arguments
         uint8_t nx, ny, nz;
     } tile;
 };
+
+int arguments_free(struct arguments *arg)
+{
+    for (size_t i = 0; i < arg->procs_size; i++)
+    {
+        for (size_t j = 0; j < arg->procs[i].func_arg_size; j++)
+        {
+            free(arg->procs[i].func_arg[j]);
+        }
+        free(arg->procs[i].func_arg);
+    }
+    for (size_t i = 0; i < arg->stats_size; i++)
+    {
+        for (size_t j = 0; j < arg->stats[i].func_arg_size; j++)
+        {
+            free(arg->stats[i].func_arg[j]);
+        }
+        free(arg->stats[i].func_arg);
+    }
+    return 1;
+}
 
 
 const func_info_t *find_func(const char *name,
@@ -115,6 +148,7 @@ unsigned int pcp_sample_p(pointcloud_t *pc,
     pointcloud_sample(*pc, param->ratio, param->strategy, &out);
     pointcloud_free(pc);
     *pc = out;
+    return 1;
 }
 
 unsigned int pcp_voxel_p(pointcloud_t *pc,
@@ -126,6 +160,7 @@ unsigned int pcp_voxel_p(pointcloud_t *pc,
     pointcloud_voxel(*pc, step_size, &out);
     pointcloud_free(pc);
     *pc = out;
+    return 1;
 }
 
 unsigned int pcp_remove_dupplicates_p(pointcloud_t *pc,
@@ -135,6 +170,7 @@ unsigned int pcp_remove_dupplicates_p(pointcloud_t *pc,
     pointcloud_remove_dupplicates(*pc, &out);
     pointcloud_free(pc);
     *pc = out;
+    return 1;
 }
 
 typedef struct pcp_aabb_s_arg_t
@@ -142,7 +178,7 @@ typedef struct pcp_aabb_s_arg_t
     int output;
     int binary;
     char *output_path;
-    int tile_id;
+    int id;
 } pcp_aabb_s_arg_t;
 
 unsigned int pcp_aabb_s(pointcloud_t *pc,
@@ -164,11 +200,56 @@ unsigned int pcp_aabb_s(pointcloud_t *pc,
     }
     aabb_t aabb = {min, max};
     mesh_t mesh = (mesh_t){NULL, 0, NULL, 0};
-    aabb_to_mesh(&aabb, &mesh);
+    aabb_to_mesh(aabb, &mesh);
 
     char tile_path[SIZE_PATH];
-    snprintf(tile_path, SIZE_PATH, param->output_path, param->tile_id);
-    mesh_write(&mesh, tile_path, param->binary);
+    snprintf(tile_path, SIZE_PATH, param->output_path, param->id);
+    mesh_write(mesh, tile_path, param->binary);
+    return 1;
 }
 
+#ifdef PCP_STAT_SAVE_VIEWPORT
+typedef struct pcp_save_viewport_s_arg_t
+{
+    char *output_path;
+    int tile_id;
+    float *mvp; // 4x4 matrix
+    int width;
+    int height;
+    vec3f_t background;
+    int frame_id;
+} pcp_save_viewport_s_arg_t;
+unsigned int pcp_save_viewport_s(pointcloud_t *pc,
+                                 void *arg)
+{
+    pcp_save_viewport_s_arg_t *param = (pcp_save_viewport_s_arg_t *)arg;
+
+    unsigned char *pixels = (unsigned char *)malloc(param->height * param->width * 3 * sizeof(unsigned char));
+    pointcloud_get_viewport(*pc, 
+                            param->mvp, 
+                            param->width, 
+                            param->height, 
+                            NULL,
+                            NULL,
+                            param->background,
+                            pixels);
+
+    unsigned char **row_pointers = malloc(param->height * sizeof(unsigned char *));
+    for (int i = 0; i < param->height; i++) 
+        row_pointers[i] = malloc(param->width * 3); 
+
+    flip_image(row_pointers, pixels, param->width, param->height);
+    free(pixels);
+
+    char tile_path[SIZE_PATH];
+    snprintf(tile_path, SIZE_PATH, param->output_path, param->tile_id, param->frame_id);
+
+    save_viewport(row_pointers, param->width, param->height, tile_path);
+    for (int i = 0; i < param->height; i++) 
+        free(row_pointers[i]);
+    free(row_pointers);
+    return 1;
+}
+
+#endif
 #endif

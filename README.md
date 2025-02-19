@@ -1,9 +1,17 @@
 # Point cloud preparation tool
 
 ## Requirements
-The following package is required to build the Point cloud preparation tool:
+The following packages are required to build the Point cloud preparation tool:
 * cmake >= 3.0
-* make
+* GNU Make
+
+To build the tool with all features enabled, the following packages are required:
+* libglfw3-dev 
+* libglew-dev 
+* libpng-dev 
+* libgl-dev 
+
+Additional requirements for example binaries:
 * libglm-dev >= 0.9.9.7
 
 ## Building
@@ -12,11 +20,19 @@ Bash scripts can be use to build pcprep project:
 * scripts/build.sh: build solutions.
 
 ### Linux
+* Build all solutions:
 ```shell
-mkdir build
-cd build
-cmake ..
-make
+./scripts/build.sh --all
+```
+
+* Build only the **pcp** app with basic features:
+```shell
+./scripts/build.sh
+```
+
+* Build the additional example binaries:
+```shell
+./scripts/build.sh --with-examples
 ```
 
 All programs are placed in `bin`.   
@@ -55,6 +71,16 @@ This program takes input a point cloud, currently supporting Polygon File Format
 For example:
 ```shell
 subsampling longdress0000.ply 0.5 ouput.ply
+```
+
+### Camera to matrix
+
+This program takes input a JSON file which specified camera parameters, and output the MVP matrixes in a JSON file.
+<br/>`cam2mat <input-cam-param.json> <output-cam-matrix.json>`<br/>
+
+For example:
+```shell
+cam2mat cam-param.json cam-matrix.json
 ```
 
 ### Screen area

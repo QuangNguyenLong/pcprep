@@ -36,7 +36,7 @@ int mesh_load(mesh_t *mesh, const char *filename)
     mesh_init(mesh, ply_count_vertex(filename), ply_count_face(filename) * 3);
     return ply_mesh_loader(filename, mesh->pos, mesh->indices);
 }
-int mesh_write(mesh_t *mesh, const char *filename, int binary)
+int mesh_write(mesh_t mesh, const char *filename, int binary)
 {
     msh_ply_desc_t descriptors[2];
     descriptors[0] = (msh_ply_desc_t){
@@ -44,17 +44,17 @@ int mesh_write(mesh_t *mesh, const char *filename, int binary)
         .property_names = (const char *[]){"x", "y", "z"},
         .num_properties = 3,
         .data_type = MSH_PLY_FLOAT,
-        .data = &mesh->pos,
-        .data_count = &mesh->num_verts};
+        .data = &mesh.pos,
+        .data_count = &mesh.num_verts};
 
-    uint32_t num_faces = mesh->num_indices / 3;
+    uint32_t num_faces = mesh.num_indices / 3;
     descriptors[1] = (msh_ply_desc_t){
         .element_name = "face",
         .property_names = (const char *[]){"vertex_indices"},
         .num_properties = 1,
         .data_type = MSH_PLY_INT32,
         .list_type = MSH_PLY_UINT8,
-        .data = &mesh->indices,
+        .data = &mesh.indices,
         .data_count = &num_faces,
         .list_size_hint = 3};
 
@@ -67,4 +67,9 @@ int mesh_write(mesh_t *mesh, const char *filename, int binary)
         msh_ply_write(pf);
     }
     msh_ply_close(pf);
+}
+
+int mesh_screen_ratio(mesh_t mesh, float* MVP, float* screen_area)
+{
+    
 }

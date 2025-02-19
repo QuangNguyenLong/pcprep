@@ -16,7 +16,7 @@ typedef struct aabb_t
     vec3f_t max;
 } aabb_t;
 
-int aabb_to_mesh(aabb_t *aabb, mesh_t *mesh);
+int aabb_to_mesh(aabb_t aabb, mesh_t *mesh);
 
 #ifdef __cplusplus
 }

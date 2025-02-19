@@ -4,6 +4,8 @@
 #include <string.h>
 #include <pcprep/pointcloud.h>
 #include "pcp.h"
+#include <cJSON.h>
+#include <pcprep/core.h>
 
 int pcp_prepare(struct arguments *arg)
 {
@@ -24,8 +26,8 @@ int pcp_prepare(struct arguments *arg)
     input_path          = arg->input;
     output_path         = arg->output;
     binary              = arg->binary;
-    input_tile_path     = malloc(max_path_size * sizeof(char));
-    output_tile_path    = malloc(max_path_size * sizeof(char));
+    input_tile_path     = (char *)malloc(max_path_size * sizeof(char));
+    output_tile_path    = (char *)malloc(max_path_size * sizeof(char));
     in_count            = arg->tiled_input;
 
     in_pcs = (pointcloud_t *)calloc(in_count, sizeof(pointcloud_t));
@@ -45,11 +47,17 @@ int pcp_prepare(struct arguments *arg)
         ny              = arg->tile.ny;
         nz              = arg->tile.nz;
         proc_count       = pointcloud_tile(in_pcs[0], nx, ny, nz, &proc_pcs);
+        for (int i = 0; i < in_count; i++)
+            pointcloud_free(&in_pcs[i]);
+        free(in_pcs);  
     }
     else if (in_count > 1 && arg->plan & PCP_PLAN_MERGE_NONE) 
     {
         proc_pcs = (pointcloud_t *)malloc(sizeof(pointcloud_t));
         proc_count = pointcloud_merge(in_pcs, in_count, &proc_pcs[0]);
+        for (int i = 0; i < in_count; i++)
+            pointcloud_free(&in_pcs[i]);  
+        free(in_pcs);  
     }
     else
     {
@@ -137,11 +145,63 @@ int pcp_prepare(struct arguments *arg)
                 for(int t = 0; t < proc_count; t++)
                 {
                     printf("-------Tile %d-------\n", t);
-                    param.tile_id = t;
+                    param.id = t;
                     pcp_aabb_s(&proc_pcs[t], (void *)&param);
                 }
                 break;
             }
+            #ifdef PCP_STAT_SAVE_VIEWPORT
+            case PCP_STAT_SAVE_VIEWPORT:
+            {
+                float mvp[4][4];
+                pcp_save_viewport_s_arg_t param = {
+                    NULL, 
+                    0, 
+                    NULL,
+                    0, 
+                    0, 
+                    (vec3f_t){255.0f, 255.0f, 255.0f}
+                };                
+
+                char  *json_buff = read_file(curr->func_arg[0]);
+                cJSON *json = cJSON_Parse(json_buff);
+                cJSON *camera = cJSON_GetObjectItem(json, "camera");
+                cJSON *screen = cJSON_GetObjectItem(camera, "screen");
+                param.width = cJSON_GetObjectItem(screen, "width")->valueint;
+                param.height = cJSON_GetObjectItem(screen, "height")->valueint;
+                cJSON *mvp_array = cJSON_GetObjectItem(camera, "mvp");
+                int count = cJSON_GetArraySize(mvp_array);
+
+                sscanf(curr->func_arg[1], "%f,%f,%f", 
+                            &param.background.x, 
+                            &param.background.y, 
+                            &param.background.z);
+                param.output_path = curr->func_arg[2];
+                printf("[STATUS] SAVE VIEWPORT: {width:%d,height:%d}\n", 
+                       param.width, 
+                       param.height);
+
+                for(int t = 0; t < proc_count; t++)
+                {
+                    for (int f = 0; f < count; f++)
+                    {
+                    cJSON *matrix = cJSON_GetArrayItem(mvp_array, f);
+                    for (int i = 0; i < 4; i++) {
+                        cJSON *row = cJSON_GetArrayItem(matrix, i);
+                        for (int j = 0; j < 4; j++) {
+                            mvp[i][j] = (float)cJSON_GetArrayItem(row, j)->valuedouble;
+                        }
+                    }
+                    param.mvp = &mvp[0][0];
+                        printf("-------Tile %d-------\n", t);
+                        param.tile_id = t;
+                        param.frame_id = f;
+                        pcp_save_viewport_s(&proc_pcs[t], (void *)&param);
+                    }
+                }
+                break;
+            }
+            #endif
             default:
             {
                 break;
@@ -154,6 +214,9 @@ int pcp_prepare(struct arguments *arg)
     {
         out_pcs = (pointcloud_t *)malloc(sizeof(pointcloud_t));
         out_count = pointcloud_merge(proc_pcs, proc_count, &out_pcs[0]);
+        for (int i = 0; i < proc_count; i++)
+            pointcloud_free(&proc_pcs[i]);
+        free(proc_pcs);
     }
     else if(arg->plan & PCP_PLAN_NONE_TILE)
     {
@@ -163,8 +226,10 @@ int pcp_prepare(struct arguments *arg)
         nx              = arg->tile.nx;
         ny              = arg->tile.ny;
         nz              = arg->tile.nz;
-        out_count       = pointcloud_tile(*proc_pcs, nx, ny, nz, &out_pcs);
-
+        out_count       = pointcloud_tile(proc_pcs[0], nx, ny, nz, &out_pcs);
+        for (int i = 0; i < proc_count; i++)
+            pointcloud_free(&proc_pcs[i]);
+        free(proc_pcs);
     }
     else
     {
@@ -182,6 +247,13 @@ int pcp_prepare(struct arguments *arg)
     snprintf(output_tile_path, max_path_size, output_path, t);
     pointcloud_write(out_pcs[t], output_tile_path, binary);
     }
+    for (int i = 0; i < out_count; i++)
+        pointcloud_free(&out_pcs[i]);
+    free(out_pcs);
+
+    free(input_tile_path);
+    free(output_tile_path);
+
     return proc_count;
 }
 
@@ -199,7 +271,7 @@ static struct argp_option options[] = {
     {"pre-process",     0x80,       "ACTION",              0, 
     "Set the pre-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is TILE). If the input are file path to point cloud tiles, ACTION can only be MERGE or NONE."},
     {"post-process",    0x81,       "ACTION",              0, 
-    "Set the post-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is NONE). Post-process ACTION must be different from pre-process ACTION."},
+    "Set the post-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is NONE). Post-process ACTION must be different from pre-process ACTION, except for action NONE."},
     {"tiled-input",     0x82,       "NUM",                 0, 
     "Input NUM point cloud tiles (1 for normal input, default is 1)."},
     {"tile",            't',        "nx,ny,nz",            0, 
@@ -232,6 +304,10 @@ static struct argp_option status_options[] = {
     "Give this help list"},
     {"aabb",                    0, NULL, OPTION_DOC, 
     "<output=0|1|2> <binary=0|1> <output-path=FILE>"},
+    #ifdef PCP_STAT_SAVE_VIEWPORT
+    {"save-viewport",           0, NULL, OPTION_DOC, 
+    "<camera=JSON> <background-color=R,G,B> <output-png(s)=FILE>"},
+    #endif
     {0}
 };
 
@@ -251,7 +327,7 @@ static int parse_func_opt(char *arg,
                           size_t *size, 
                           int max_size, 
                           const func_info_t *func_info_list,
-                          char *name)
+                          const char *name)
 {
     if (*size >= max_size) {
         argp_error(state, "Too many options specified (max: %d)", max_size);
@@ -261,7 +337,7 @@ static int parse_func_opt(char *arg,
         argp_help(argp, 
                   stdout, 
                   ARGP_HELP_STD_HELP, 
-                  name);
+                  (char *)name);
         exit(0);
     }
 
@@ -275,7 +351,7 @@ static int parse_func_opt(char *arg,
     curr->func_id = info->func;
 
     // Collect arguments
-    curr->func_arg = malloc(info->max_args * sizeof(char*));
+    curr->func_arg = (char **)malloc(info->max_args * sizeof(char*));
     curr->func_arg_size = 0;
 
     // Collect the required number of arguments
@@ -289,11 +365,12 @@ static int parse_func_opt(char *arg,
         curr->func_arg[i] = strdup(arg);
         curr->func_arg_size++;
     }
+    return 1;
 }
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) 
 {
-    struct arguments *args = state->input;
+    struct arguments *args = (struct arguments *)state->input;
     
     switch (key) {
         case 'i':
@@ -428,5 +505,6 @@ int main(int argc, char *argv[])
     
     pcp_prepare(&args);
 
+    arguments_free(&args);
     return 0;
 }

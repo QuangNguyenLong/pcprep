@@ -9,5 +9,5 @@ int sample_union(int *input,
                  int output_size);
 
 float quantize(float x, float q);
-
+char* read_file(const char *filename);
 #endif

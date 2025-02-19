@@ -82,8 +82,8 @@ void writeConvexHullToObj(const ConvexHull *hull, const char *filename)
 int main()
 {
     // cam_pos_x, cam_pos_y, cam_pos_z, look_at_x, look_at_y, look_at_z, up_vector_x, up_vector_y, up_vector_z, FoVy, aspect_ratio  
-    glm::vec3 cam_position(50, 500, 1500);
-    glm::vec3 look_at_point(50, 500, 0);
+    glm::vec3 cam_position(1000, 1000, 1000);
+    glm::vec3 look_at_point(250, 250, 250);
     glm::vec3 up_vector(0, 1, 0);
 
     glm::mat4 ModelMatrix = glm::mat4(1.0f);
@@ -119,11 +119,11 @@ int main()
         writeConvexHullToObj(&bbox, out_bbox_path[i]);
         float screen_area = bbox.Projection_Area(MVP, cam_position, 1, 1);
         printf("%f \n", screen_area);
-        for(int i=0;i<4;i++)
+        for(int i = 0; i < 4; i++)
         {
-            for(int j = 0;j < 4;j++)
+            for(int j = 0; j < 4; j++)
             {
-                printf("%.02f ", MVP[i][j]);
+                printf("%.04f ", MVP[i][j]);
             }
             printf("\n");
         }
