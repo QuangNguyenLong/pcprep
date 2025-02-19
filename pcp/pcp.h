@@ -71,15 +71,20 @@ const func_info_t statuses_g[] =
     {
         "aabb",
         PCP_STAT_AABB,
-        3, 3,
+        3, 3
     },
 #ifdef PCP_STAT_SAVE_VIEWPORT
     {
         "save-viewport",
         PCP_STAT_SAVE_VIEWPORT,
-        3, 3,
+        3, 3
     },
 #endif
+    {
+        "screen-area",
+        PCP_STAT_SCREEN_AREA,
+        1, 1
+    },
     {NULL, 0, 0, 0} 
 };
 
@@ -217,7 +222,7 @@ typedef struct pcp_save_viewport_s_arg_t
     int width;
     int height;
     vec3f_t background;
-    int frame_id;
+    int view_id;
 } pcp_save_viewport_s_arg_t;
 unsigned int pcp_save_viewport_s(pointcloud_t *pc,
                                  void *arg)
@@ -242,7 +247,7 @@ unsigned int pcp_save_viewport_s(pointcloud_t *pc,
     free(pixels);
 
     char tile_path[SIZE_PATH];
-    snprintf(tile_path, SIZE_PATH, param->output_path, param->tile_id, param->frame_id);
+    snprintf(tile_path, SIZE_PATH, param->output_path, param->tile_id, param->view_id);
 
     save_viewport(row_pointers, param->width, param->height, tile_path);
     for (int i = 0; i < param->height; i++) 
@@ -250,6 +255,22 @@ unsigned int pcp_save_viewport_s(pointcloud_t *pc,
     free(row_pointers);
     return 1;
 }
-
 #endif
+
+typedef struct pcp_screen_ratio_s_arg_t
+{
+    int tile_id;
+    float *mvp; // 4x4 matrix
+    int frame_id;
+} pcp_screen_ratio_s_arg_t;
+
+unsigned int pcp_screen_ratio_s(pointcloud_t *pc,
+                                void *arg)
+{
+    
+    return 1;
+}
+
+
+
 #endif

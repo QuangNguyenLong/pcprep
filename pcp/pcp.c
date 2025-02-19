@@ -195,7 +195,7 @@ int pcp_prepare(struct arguments *arg)
                     param.mvp = &mvp[0][0];
                         printf("-------Tile %d-------\n", t);
                         param.tile_id = t;
-                        param.frame_id = f;
+                        param.view_id = f;
                         pcp_save_viewport_s(&proc_pcs[t], (void *)&param);
                     }
                 }

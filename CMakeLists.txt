@@ -5,7 +5,6 @@ project(pcprep C CXX)
 
 # Optional libraries
 set(OPTIONAL_LIBRARIES 
-    OSMesa
     GL
     glfw
     GLEW
@@ -37,7 +36,8 @@ function(link_optional_libraries target)
     foreach(lib ${OPTIONAL_LIBRARIES})
         if(WITH_${lib})
             target_link_libraries(${target} ${lib})
-            target_compile_definitions(${target} PRIVATE WITH_${lib})
+            string(TOUPPER ${lib} LIBFLAG)
+            target_compile_definitions(${target} PRIVATE WITH_${LIBFLAG})
         else()
             message(STATUS "${lib} support is disabled")
         endif()

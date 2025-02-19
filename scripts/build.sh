@@ -5,7 +5,6 @@ WITH_GL=OFF
 WITH_GLEW=OFF
 WITH_glfw=OFF
 WITH_png=OFF
-WITH_OSMesa=OFF
 WITH_EXAMPLES=OFF
 
 # Parse command-line arguments
@@ -17,10 +16,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --with-glfw)
       WITH_glfw=ON
-      shift
-      ;;
-    --with-osmesa)
-      WITH_OSMesa=ON
       shift
       ;;
     --with-glew)
@@ -40,7 +35,6 @@ while [[ $# -gt 0 ]]; do
       WITH_GLEW=ON
       WITH_glfw=ON
       WITH_png=ON
-      WITH_OSMesa=ON
       WITH_EXAMPLES=ON
       shift
       ;;
@@ -50,7 +44,6 @@ while [[ $# -gt 0 ]]; do
       echo "  --with-gl        Enable OpenGL"
       echo "  --with-glew      Enable GLEW"
       echo "  --with-glfw      Enable glfw"
-      echo "  --with-osmesa    Enable OSMesa"
       echo "  --with-png       Enable png"
       echo "  --with-examples  Build examples"
       echo "  --all            Build all"
@@ -78,7 +71,6 @@ cmake .. \
   -DWITH_GLEW=${WITH_GLEW} \
   -DWITH_glfw=${WITH_glfw} \
   -DWITH_png=${WITH_png} \
-  -DWITH_OSMesa=${WITH_OSMesa} \
   -DWITH_EXAMPLES=${WITH_EXAMPLES}
 
 # Build
