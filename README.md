@@ -4,6 +4,8 @@
 The following packages are required to build the Point cloud preparation tool:
 * cmake >= 3.0
 * GNU Make
+* gcc >= 9.4.0
+* g++ >= 9.4.0
 
 To build the tool with all features enabled, the following packages are required:
 * libglfw3-dev 
