@@ -1,21 +1,22 @@
 #ifndef PCP_H
 #define PCP_H
 
-// #define WITH_GLEW_GL_PNG
 #include <pcprep/graphic.h>
 #include <pcprep/pointcloud.h>
 #include <pcprep/aabb.h>
 #include <stdint.h>
+#include <cJSON.h>
 
 #define MAX_PROCESS 256
 #define MAX_STATUS 256
+#define MAX_MVP_COUNT 0xffff
 
 #define PCP_PROC_SAMPLE 0x00
 #define PCP_PROC_VOXEL 0x01
 #define PCP_PROC_REMOVE_DUPLICATES 0x02
 
 #define PCP_STAT_AABB 0x00
-#define PCP_STAT_SCREEN_AREA 0x01
+#define PCP_STAT_PIXEL_PER_TILE 0x01
 #ifdef WITH_GRAPHIC
 #define PCP_STAT_SAVE_VIEWPORT 0x02
 #endif
@@ -39,55 +40,41 @@ typedef struct func_t
     size_t func_arg_size;
 } func_t;
 
-typedef struct func_info {
+typedef struct func_info
+{
     const char *name;
-    unsigned char func;   // Maps to func_id
+    unsigned char func; // Maps to func_id
     int min_args;
     int max_args;
 } func_info_t;
 
-const func_info_t processes_g[] = 
-{
+const func_info_t processes_g[] =
     {
-        "sample",
-        PCP_PROC_SAMPLE,
-        2, 2
-    },
-    {
-        "voxel",
-        PCP_PROC_VOXEL,
-        1, 1
-    },
-    {
-        "remove-duplicates",
-        PCP_PROC_REMOVE_DUPLICATES,
-        0, 0
-    },
-    {NULL, 0, 0, 0} 
-};
+        {"sample",
+         PCP_PROC_SAMPLE,
+         2, 2},
+        {"voxel",
+         PCP_PROC_VOXEL,
+         1, 1},
+        {"remove-duplicates",
+         PCP_PROC_REMOVE_DUPLICATES,
+         0, 0},
+        {NULL, 0, 0, 0}};
 
-const func_info_t statuses_g[] = 
-{
+const func_info_t statuses_g[] =
     {
-        "aabb",
-        PCP_STAT_AABB,
-        3, 3
-    },
+        {"aabb",
+         PCP_STAT_AABB,
+         3, 3},
 #ifdef PCP_STAT_SAVE_VIEWPORT
-    {
-        "save-viewport",
-        PCP_STAT_SAVE_VIEWPORT,
-        3, 3
-    },
+        {"save-viewport",
+         PCP_STAT_SAVE_VIEWPORT,
+         3, 3},
 #endif
-    {
-        "screen-area",
-        PCP_STAT_SCREEN_AREA,
-        1, 1
-    },
-    {NULL, 0, 0, 0} 
-};
-
+        {"pixel-per-tile",
+         PCP_STAT_PIXEL_PER_TILE,
+         3, 3},
+        {NULL, 0, 0, 0}};
 
 struct arguments
 {
@@ -128,12 +115,11 @@ int arguments_free(struct arguments *arg)
     return 1;
 }
 
-
 const func_info_t *find_func(const char *name,
-                             const func_info_t *funcs) 
+                             const func_info_t *funcs)
 {
-    for (const func_info_t *p = funcs; p->name != NULL; p++) 
-        if (strcmp(p->name, name) == 0) 
+    for (const func_info_t *p = funcs; p->name != NULL; p++)
+        if (strcmp(p->name, name) == 0)
             return p;
     return NULL;
 }
@@ -219,8 +205,8 @@ typedef struct pcp_save_viewport_s_arg_t
     char *output_path;
     int tile_id;
     float *mvp; // 4x4 matrix
-    int width;
-    int height;
+    size_t width;
+    size_t height;
     vec3f_t background;
     int view_id;
 } pcp_save_viewport_s_arg_t;
@@ -230,18 +216,18 @@ unsigned int pcp_save_viewport_s(pointcloud_t *pc,
     pcp_save_viewport_s_arg_t *param = (pcp_save_viewport_s_arg_t *)arg;
 
     unsigned char *pixels = (unsigned char *)malloc(param->height * param->width * 3 * sizeof(unsigned char));
-    pointcloud_get_viewport(*pc, 
-                            param->mvp, 
-                            param->width, 
-                            param->height, 
+    pointcloud_get_viewport(*pc,
+                            param->mvp,
+                            param->width,
+                            param->height,
                             NULL,
                             NULL,
                             param->background,
                             pixels);
 
     unsigned char **row_pointers = malloc(param->height * sizeof(unsigned char *));
-    for (int i = 0; i < param->height; i++) 
-        row_pointers[i] = malloc(param->width * 3); 
+    for (int i = 0; i < param->height; i++)
+        row_pointers[i] = malloc(param->width * 3);
 
     flip_image(row_pointers, pixels, param->width, param->height);
     free(pixels);
@@ -250,27 +236,53 @@ unsigned int pcp_save_viewport_s(pointcloud_t *pc,
     snprintf(tile_path, SIZE_PATH, param->output_path, param->tile_id, param->view_id);
 
     save_viewport(row_pointers, param->width, param->height, tile_path);
-    for (int i = 0; i < param->height; i++) 
+    for (int i = 0; i < param->height; i++)
         free(row_pointers[i]);
     free(row_pointers);
     return 1;
 }
 #endif
 
-typedef struct pcp_screen_ratio_s_arg_t
+typedef struct pcp_pixel_per_tile_s_arg_t
 {
-    int tile_id;
-    float *mvp; // 4x4 matrix
-    int frame_id;
-} pcp_screen_ratio_s_arg_t;
+    char *outpath;
+    float *mvps; // 4x4 matrix
+    int mvp_count;
+    int view_id;
+    size_t width;
+    size_t height;
+    int nx;
+    int ny;
+    int nz;
+} pcp_pixel_per_tile_s_arg_t;
 
-unsigned int pcp_screen_ratio_s(pointcloud_t *pc,
-                                void *arg)
+unsigned int pcp_pixel_per_tile_s(pointcloud_t *pc,
+                                  void *arg)
 {
+    pcp_pixel_per_tile_s_arg_t *param = (pcp_pixel_per_tile_s_arg_t *)arg;
+    int num_tile = param->nx * param->ny * param->nz;
+    int **pixel_count = (int **)malloc(sizeof(int *) * param->mvp_count);
+    for (int v = 0; v < param->mvp_count; v++)
+        pixel_count[v] = (int *)calloc(sizeof(int), num_tile);    
     
+    for (int v = 0; v < param->mvp_count; v++)
+    {
+        pointcloud_count_pixel_per_tile(*pc,
+                                        param->nx,
+                                        param->ny,
+                                        param->nz,
+                                        param->width,
+                                        param->height,
+                                        param->mvps + v * 4 * 4,
+                                        &pixel_count[v][0]);
+    }
+    json_write_tiles_pixel(param->outpath, 
+                           num_tile, 
+                           param->mvp_count, 
+                           pixel_count, 
+                           param->width * param->height);
+    free(pixel_count);
     return 1;
 }
-
-
 
 #endif

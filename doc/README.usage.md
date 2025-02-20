@@ -15,7 +15,7 @@ The **Point Cloud Prepare (PCP)** is a command-line tool designed for preparing,
 The `pcp` program processes point cloud (tiles) data from a source file and generates one or more output files based on specified options. It supports customizable processing steps, status calculations, and tiling/merging configurations.
 
 
-                    Point Cloud (tiles)                     
+                       Point Cloud (tiles)                     
                                 |                           
                                 v                           
       +------------------------------------------------+    
@@ -113,13 +113,13 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
 ### Tiling Option
 #### `-t, --tile=nx,ny,nz`  
   Set the number of division per axis for TILE action.
-  - `nx, ny, nz`: Number of divisions along the x, y, and z axes.  
-  - Example: `2,2,2`.
+  - `nx,ny,nz`: Number of divisions along the x, y, and z axes.  
+  Example: `2,2,2`.
 
 ### Tiled-input Option
 #### `--tiled-input=NUM`
-   Specified `NUM` point cloud tiles if the input are point cloud tiles.
-   - `NUM`: Number of point cloud tiles input (1 for normal input, default is 1).
+  Specified `NUM` point cloud tiles if the input are point cloud tiles.
+  - `NUM`: Number of point cloud tiles input (1 for normal input, default is 1).
 
 ---
 
@@ -132,7 +132,8 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
 
 #### Sample process
 ##### `sample <ratio> <binary>`
- - `ratio=FLOAT`
+  Sample the processing point cloud given a ratio.
+- `ratio=FLOAT`
   Specifies the sample ratio compare to the processing point cloud.
 - `binary=0|1`
   Strategy for sampling.
@@ -143,7 +144,8 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
 
 #### Voxel process
 ##### `voxel <voxel-size>`
-- `voxel-size=FLOAT`
+  Voxel the processing point cloud given the voxel size.
+  - `voxel-size=FLOAT`
   Specifies the step size to voxel the processing point cloud.
 
 #### Remove duplicates process
@@ -161,6 +163,7 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
 
 #### AABB status
 ##### `aabb <output> <binary> <output-path>`
+  Calculate the Aligned Axis Bounding Box of the processing point cloud.
 - `output=0|1|2`
   Specifies how to get the bounding box:
   - `0` (default): Print on terminal.  
@@ -174,22 +177,30 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
   Specifies the output file(s). 
   Example: `bbox%04d.ply` is the output path for multiple output files. 
 
+#### Pixel-per-tile status
+##### `save-viewport <camera=JSON> <nx,ny,nz> <output-visibility=JSON>`
+  Calculate the number of pixels each point cloud tile occupies in the camera viewport when view the processing point cloud from a given camera trajectory.
+- `camera=JSON`
+  Specifies the JSON file path of the camera trajectory in MVP matrix. An example JSON can be found [here](../examples/cam2mat/cam-matrix.json).
+- `nx,ny,nz`
+  Number of divisions along the x, y, and z axes.  
+- `output-visibility=JSON`
+  Specifies the output JSON file for each processing point cloud. 
 
 #### Viewport status
 ##### `save-viewport <camera=JSON> <background-color=R,G,B> <output-png(s)=FILE>`
+Calculate the camera viewport when view the processing point cloud given a camera trajectory and the background color.
 This status is only available if **PCP** was built with `--with-gl --with-png --with-glfw --with-glew` 
 - `camera=JSON`
   Specifies the JSON file path of the camera trajectory in MVP matrix. An example JSON can be found [here](../examples/cam2mat/cam-matrix.json).
 - `background-color=R,G,B`
   Specifies the background color for the viewport in RGB.
-  - Example: `255,255,255` for black.
+  Example: `255,255,255` for black.
 - `output-png(s)=FILE`
-  Specifies the output png(s) for each processing point cloud. 
-  - Example: `tile%04d.view%04d.png`, whereas the first `%04d` is for tile index, second `%04d` is for viewport index (if the input JSON have multiple MVP matrixes).
+  Specifies the output PNG image(s) for each processing point cloud. 
+  Example: `tile%04d.view%04d.png`, whereas the first `%04d` is for tile index, second `%04d` is for viewport index (if the input JSON have multiple MVP matrixes).
 
 ---
-
-
 
 ## Examples usage
 

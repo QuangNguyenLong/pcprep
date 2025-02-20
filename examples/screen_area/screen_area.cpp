@@ -119,13 +119,5 @@ int main()
         writeConvexHullToObj(&bbox, out_bbox_path[i]);
         float screen_area = bbox.Projection_Area(MVP, cam_position, 1, 1);
         printf("%f \n", screen_area);
-        for(int i = 0; i < 4; i++)
-        {
-            for(int j = 0; j < 4; j++)
-            {
-                printf("%.04f ", MVP[i][j]);
-            }
-            printf("\n");
-        }
     }
 }

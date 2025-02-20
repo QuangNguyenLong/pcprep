@@ -16,22 +16,6 @@ int parse_aspect_ratio(const char* aspect_str, int *width, int *height)
     return -1;  
 }
 
-
-void write_json_to_file(const char* filename, cJSON* json) 
-{
-    char* json_string = cJSON_Print(json);
-    FILE* file = fopen(filename, "w");
-    if (file) 
-    {
-        fprintf(file, "%s", json_string);
-        fclose(file);
-    } else {
-        printf("Error writing to file: %s\n", filename);
-    }
-    free(json_string);
-}
-
-
 int main(int argc, char** argv) 
 {
     if (argc < 3) 
@@ -150,7 +134,7 @@ int main(int argc, char** argv)
     }
 
     
-    write_json_to_file(argv[2], output_json);
+    json_write_to_file(argv[2], output_json);
 
     
     cJSON_Delete(json);

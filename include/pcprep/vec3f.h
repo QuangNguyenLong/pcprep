@@ -127,6 +127,19 @@ static inline vec3f_t vec3f_quantize(vec3f_t v, float q)
     return (vec3f_t){quantize(v.x, q), quantize(v.y, q), quantize(v.z, q)};
 }
 
+static inline vec3f_t vec3f_mvp_mul(vec3f_t v, float *mvp)
+{
+    float temp_x = mvp[0] * v.x + mvp[4] * v.y + mvp[8]  * v.z + mvp[12];
+    float temp_y = mvp[1] * v.x + mvp[5] * v.y + mvp[9]  * v.z + mvp[13];
+    float temp_z = mvp[2] * v.x + mvp[6] * v.y + mvp[10] * v.z + mvp[14];
+    float temp_w = mvp[3] * v.x + mvp[7] * v.y + mvp[11] * v.z + mvp[15];
+    temp_x /= temp_w;
+    temp_y /= temp_w;
+    temp_z /= temp_w;
+    return (vec3f_t){temp_x, temp_y, temp_z};
+}
+
+
 #ifdef __cplusplus
 }
 #endif

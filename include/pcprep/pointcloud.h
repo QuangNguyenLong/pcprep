@@ -62,6 +62,12 @@ int pointcloud_remove_dupplicates(pointcloud_t pc,
 int pointcloud_voxel(pointcloud_t pc,
                      float voxel_size,
                      pointcloud_t *out);
+int pointcloud_count_pixel_per_tile(pointcloud_t pc,
+                                    int nx, int ny, int nz,
+                                    int width,
+                                    int height,
+                                    float *mvp,
+                                    int *pixel_count);
 #ifdef __cplusplus
 }
 #endif

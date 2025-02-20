@@ -6,12 +6,9 @@
 #include <time.h>
 #include <stdio.h>
 
-
 #define MSH_PLY_INCLUDE_LIBC_HEADERS
 #define MSH_PLY_IMPLEMENTATION
 #include <msh_ply.h>
-
-
 
 int pointcloud_init(pointcloud_t *pc, size_t size)
 {
@@ -171,7 +168,7 @@ int pointcloud_tile(pointcloud_t pc,
     int *tmp = (int *)malloc(sizeof(int) * size);
     *tiles = (pointcloud_t *)malloc(sizeof(pointcloud_t) * size);
 
-    if(!tiles)
+    if (!tiles)
     {
         free(numVerts);
         free(tmp);
@@ -215,8 +212,8 @@ int pointcloud_tile(pointcloud_t pc,
     return size;
 }
 
-int pointcloud_merge(pointcloud_t *pcs, 
-                     size_t pc_count, 
+int pointcloud_merge(pointcloud_t *pcs,
+                     size_t pc_count,
                      pointcloud_t *out)
 {
     size_t total_size = 0;
@@ -230,10 +227,10 @@ int pointcloud_merge(pointcloud_t *pcs,
     int curr = 0;
     for (int i = 0; i < pc_count; i++)
     {
-        memcpy((char *)(out->pos + curr * 3), 
+        memcpy((char *)(out->pos + curr * 3),
                (char *)pcs[i].pos,
                pcs[i].size * 3 * sizeof(float));
-        memcpy((char *)(out->rgb + curr * 3), 
+        memcpy((char *)(out->rgb + curr * 3),
                (char *)pcs[i].rgb,
                pcs[i].size * 3 * sizeof(uint8_t));
         curr += pcs[i].size;
@@ -344,7 +341,6 @@ static void pointcloud_element_merge_sort(pointcloud_t pc, int left, int right)
     pointcloud_element_merge(pc, left, mid, right);
 }
 
-
 int pointcloud_remove_dupplicates(pointcloud_t pc,
                                   pointcloud_t *out)
 {
@@ -394,4 +390,78 @@ int pointcloud_voxel(pointcloud_t pc,
     for (int i = 0; i < pc.size; i++)
         pos[i] = vec3f_quantize(pos[i], voxel_size);
     pointcloud_remove_dupplicates(pc, out);
+}
+
+int pointcloud_count_pixel_per_tile(pointcloud_t pc,
+                                    int nx, int ny, int nz,
+                                    int width,
+                                    int height,
+                                    float *mvp,
+                                    int *pixel_count)
+{
+    for (int i = 0; i < nx * ny * nz; i++)
+        pixel_count[i] = 0;
+
+    vec3f_t *points = (vec3f_t *)pc.pos;
+    vec3f_t ndc = {0, 0, 0};
+    int screen_w = 0;
+    int screen_h = 0;
+    int tile_id = 0;
+    vec3f_t min, max;
+    pointcloud_min(pc, &min);
+    pointcloud_max(pc, &max);
+
+    float **minZvalue = (float **)malloc(sizeof(float *) * height);
+    for (int i = 0; i < height; i++)
+    {
+        minZvalue[i] = (float *)malloc(sizeof(float) * width); 
+        for (int j = 0; j < width; j++)
+            minZvalue[i][j] = 2.0f; 
+            // 2 because it is smaller than the max of NDC [-1, 1]
+    }
+
+    uint16_t **curr_tile = (uint16_t **)malloc(sizeof(uint16_t *) * height);
+    for (int i = 0; i < height; i++)
+    {
+        curr_tile[i] = (uint16_t *)malloc(sizeof(uint16_t) * width); 
+        for (int j = 0; j < width; j++)
+        curr_tile[i][j] = -1; 
+    }
+
+    for (int i = 0; i < pc.size; i++)
+    {
+        tile_id = (int)get_tile_id((vec3f_t){nx, ny, nz},
+                                        min, max, points[i]);
+
+        vec3f_t ndc = vec3f_mvp_mul(points[i], mvp);
+        // check only if ndc is in side view-frustum
+        if (ndc.x >= -1 && ndc.x <= 1 &&
+            ndc.y >= -1 && ndc.y <= 1 &&
+            ndc.z >= 0  && ndc.z <= 1)
+        {       
+            screen_w = (int)((ndc.x + 1.0) * 0.5 * width);
+            screen_h = (int)((1.0 - ndc.y) * 0.5 * height);
+
+            // If current point is nearer to the camera, then:
+            // - minZvalue is updated
+            // curr_tile is also updated
+            if (ndc.z < minZvalue[screen_h][screen_w])
+            {
+                minZvalue[screen_h][screen_w] = ndc.z;
+                curr_tile[screen_h][screen_w] = tile_id;
+            }
+        }
+    }
+    // After we have known each pixel hold the point of which tile, we count.
+    for (int i = 0; i < height; i++)
+    {
+        for (int j = 0; j < width; j++)
+        {
+            if (curr_tile[i][j] >= 0)
+            {
+                pixel_count[curr_tile[i][j]]++;
+            }
+        }
+    } 
+    return 1;
 }

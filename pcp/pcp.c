@@ -4,8 +4,8 @@
 #include <string.h>
 #include <pcprep/pointcloud.h>
 #include "pcp.h"
-#include <cJSON.h>
 #include <pcprep/core.h>
+#include <pcprep/wrapper.h>
 
 int pcp_prepare(struct arguments *arg)
 {
@@ -150,10 +150,44 @@ int pcp_prepare(struct arguments *arg)
                 }
                 break;
             }
+            case PCP_STAT_PIXEL_PER_TILE:
+            {
+                pcp_pixel_per_tile_s_arg_t param = {
+                    .outpath = NULL,
+                    .height = 0,
+                    .width = 0,
+                    .mvps = NULL,
+                    .mvp_count = 0,
+                    .nx = 1,
+                    .ny = 1,
+                    .nz = 1,
+                    .view_id = 0
+                };
+                float mvps[MAX_MVP_COUNT][4][4];
+                int mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
+                                                      &mvps[0][0][0], 
+                                                      MAX_MVP_COUNT, 
+                                                      &param.width, 
+                                                      &param.height);
+
+                sscanf(curr->func_arg[1], "%d,%d,%d", 
+                            &param.nx, 
+                            &param.ny, 
+                            &param.nz);
+                param.outpath = curr->func_arg[2];
+                param.mvps = &mvps[0][0][0];
+                param.mvp_count = mvp_count;
+                
+                for(int t = 0; t < proc_count; t++)
+                {   
+                    pcp_pixel_per_tile_s(&proc_pcs[t], (void *)&param);
+                }
+                break;
+            }
             #ifdef PCP_STAT_SAVE_VIEWPORT
             case PCP_STAT_SAVE_VIEWPORT:
             {
-                float mvp[4][4];
+
                 pcp_save_viewport_s_arg_t param = {
                     NULL, 
                     0, 
@@ -161,38 +195,28 @@ int pcp_prepare(struct arguments *arg)
                     0, 
                     0, 
                     (vec3f_t){255.0f, 255.0f, 255.0f}
-                };                
-
-                char  *json_buff = read_file(curr->func_arg[0]);
-                cJSON *json = cJSON_Parse(json_buff);
-                cJSON *camera = cJSON_GetObjectItem(json, "camera");
-                cJSON *screen = cJSON_GetObjectItem(camera, "screen");
-                param.width = cJSON_GetObjectItem(screen, "width")->valueint;
-                param.height = cJSON_GetObjectItem(screen, "height")->valueint;
-                cJSON *mvp_array = cJSON_GetObjectItem(camera, "mvp");
-                int count = cJSON_GetArraySize(mvp_array);
+                };     
+                float mvps[MAX_MVP_COUNT][4][4];
+                int mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
+                                                      &mvps[0][0][0], 
+                                                      MAX_MVP_COUNT, 
+                                                      &param.width, 
+                                                      &param.height);
 
                 sscanf(curr->func_arg[1], "%f,%f,%f", 
                             &param.background.x, 
                             &param.background.y, 
                             &param.background.z);
                 param.output_path = curr->func_arg[2];
-                printf("[STATUS] SAVE VIEWPORT: {width:%d,height:%d}\n", 
+                printf("[STATUS] SAVE VIEWPORT: {width:%lu,height:%lu}\n", 
                        param.width, 
                        param.height);
 
                 for(int t = 0; t < proc_count; t++)
-                {
-                    for (int f = 0; f < count; f++)
+                {   
+                    for (int f = 0; f < mvp_count; f++)
                     {
-                    cJSON *matrix = cJSON_GetArrayItem(mvp_array, f);
-                    for (int i = 0; i < 4; i++) {
-                        cJSON *row = cJSON_GetArrayItem(matrix, i);
-                        for (int j = 0; j < 4; j++) {
-                            mvp[i][j] = (float)cJSON_GetArrayItem(row, j)->valuedouble;
-                        }
-                    }
-                    param.mvp = &mvp[0][0];
+                        param.mvp = &mvps[f][0][0];
                         printf("-------Tile %d-------\n", t);
                         param.tile_id = t;
                         param.view_id = f;
@@ -308,6 +332,8 @@ static struct argp_option status_options[] = {
     {"save-viewport",           0, NULL, OPTION_DOC, 
     "<camera=JSON> <background-color=R,G,B> <output-png(s)=FILE>"},
     #endif
+    {"pixel-per-tile",           0, NULL, OPTION_DOC, 
+    "<camera=JSON> <nx,ny,nz> <output-visibility=JSON>"},
     {0}
 };
 
