@@ -41,12 +41,12 @@ int pcp_prepare(struct arguments *arg)
     if (in_count == 1 && arg->plan & PCP_PLAN_TILE_NONE) 
     {
         int             nx  = 0;
-        int             ny 	= 0;
+        int             ny  = 0;
         int             nz  = 0;
         nx              = arg->tile.nx;
         ny              = arg->tile.ny;
         nz              = arg->tile.nz;
-        proc_count       = pointcloud_tile(in_pcs[0], nx, ny, nz, &proc_pcs);
+        proc_count      = pointcloud_tile(in_pcs[0], nx, ny, nz, &proc_pcs);
         for (int i = 0; i < in_count; i++)
             pointcloud_free(&in_pcs[i]);
         free(in_pcs);  
@@ -332,7 +332,7 @@ static struct argp_option status_options[] = {
     {"save-viewport",           0, NULL, OPTION_DOC, 
     "<camera=JSON> <background-color=R,G,B> <output-png(s)=FILE>"},
     #endif
-    {"pixel-per-tile",           0, NULL, OPTION_DOC, 
+    {"pixel-per-tile",          0, NULL, OPTION_DOC, 
     "<camera=JSON> <nx,ny,nz> <output-visibility=JSON>"},
     {0}
 };
@@ -346,14 +346,14 @@ static struct argp status_argp = {status_options,
                                   "[<ARG>...]", 
                                   status_doc};
 
-static int parse_func_opt(char *arg, 
-                          struct argp *argp,
-                          struct argp_state *state, 
-                          func_t *funcs, 
-                          size_t *size, 
-                          int max_size, 
-                          const func_info_t *func_info_list,
-                          const char *name)
+static int parse_func_opt(char                   *arg, 
+                          struct argp            *argp,
+                          struct argp_state      *state, 
+                          func_t                 *funcs, 
+                          size_t                 *size, 
+                          int                    max_size, 
+                          const func_info_t      *func_info_list,
+                          const char             *name)
 {
     if (*size >= max_size) {
         argp_error(state, "Too many options specified (max: %d)", max_size);

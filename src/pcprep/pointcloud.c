@@ -119,7 +119,8 @@ int pointcloud_max(pointcloud_t pc, vec3f_t *max)
 
 int get_tile_id(vec3f_t n, vec3f_t min, vec3f_t max, vec3f_t v)
 {
-    if (vec3f_g(v, max) || vec3f_l(v, min))
+    if (v.x > max.x || v.y > max.y || v.z > max.z ||
+        v.x < min.x || v.y < min.y || v.z < min.z)
         return -1;
     vec3f_t ans;
     // ans = (v - min) / ((max - min) / n);
