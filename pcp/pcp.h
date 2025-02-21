@@ -215,7 +215,10 @@ unsigned int pcp_save_viewport_s(pointcloud_t *pc,
 {
     pcp_save_viewport_s_arg_t *param = (pcp_save_viewport_s_arg_t *)arg;
 
-    unsigned char *pixels = (unsigned char *)malloc(param->height * param->width * 3 * sizeof(unsigned char));
+    unsigned char *pixels = (unsigned char *)malloc(param->height * 
+                                                    param->width * 
+                                                    3 * 
+                                                    sizeof(unsigned char));
     pointcloud_get_viewport(*pc,
                             param->mvp,
                             param->width,

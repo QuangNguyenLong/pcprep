@@ -134,23 +134,8 @@ int get_tile_id(vec3f_t n, vec3f_t min, vec3f_t max, vec3f_t v)
     ans = (vec3f_t){(int)(ans.x < n.x ? ans.x : n.x - 1),
                     (int)(ans.y < n.y ? ans.y : n.y - 1),
                     (int)(ans.z < n.z ? ans.z : n.z - 1)};
-    for (int i = 0, a = 0, b = 0, c = 0; i < n.x * n.y * n.z; i++)
-    {
-        if (c == n.z)
-        {
-            c = 0;
-            b++;
-        }
-        if (b == n.y)
-        {
-            b = 0;
-            a++;
-        }
-        if (vec3f_eq(ans, vec3f_int((vec3f_t){a, b, c})))
-            return i;
-        c++;
-    }
-    return -1;
+    
+    return ans.z + ans.y * n.z + ans.x * n.y * n.z;
 }
 
 // TODO: this function is not safe
