@@ -6,6 +6,7 @@
 #include "pcp.h"
 #include <pcprep/core.h>
 #include <pcprep/wrapper.h>
+#include <time.h>
 
 int pcp_prepare(struct arguments *arg)
 {
@@ -75,44 +76,28 @@ int pcp_prepare(struct arguments *arg)
             {
             case PCP_PROC_SAMPLE:
             {
-                pcp_sample_p_arg_t param = {1.0f, 0};
+                pcp_sample_p_arg_t *param = 
+                (pcp_sample_p_arg_t *)malloc(
+                    sizeof(pcp_sample_p_arg_t)
+                );
+                *param = (pcp_sample_p_arg_t){1.0f, 0};
                 float percent = atof(curr->func_arg[0]);
-
                 if(percent > 0.0f && percent < 1.0f)
-                    param.ratio = percent;
-
-                param.strategy = atoi(curr->func_arg[1]);
-            
-                printf("[PROCESS] Sample: {ratio:%f,strategy:%d}\n",
-                    param.ratio,
-                    param.strategy);
-        
-                for(int t = 0; t < proc_count; t++)
-                {
-                    printf("-------Tile %d-------\n", t);
-                    pcp_sample_p(&proc_pcs[t], (void *)&param);
-                }
+                    param->ratio = percent;
+                param->strategy = atoi(curr->func_arg[1]);
+                pcp_process_legs_append(pcp_sample_p, param);
                 break;
             }
             case PCP_PROC_VOXEL:
             {
-                float step_size = atof(curr->func_arg[0]);
-                printf("[PROCESS] Voxel: {step_size:%f}\n", step_size);
-                for(int t = 0; t < proc_count; t++)
-                {
-                    printf("-------Tile %d-------\n", t);
-                    pcp_voxel_p(&proc_pcs[t], (void *)&step_size);
-                }
+                float *param = (float *)malloc(sizeof(float));
+                *param = atof(curr->func_arg[0]);
+                pcp_process_legs_append(pcp_voxel_p, param);
                 break;
             }
             case PCP_PROC_REMOVE_DUPLICATES:
             {
-                printf("[PROCESS] Remove dupplicates: \n");
-                for(int t = 0; t < proc_count; t++)
-                {
-                    printf("-------Tile %d-------\n", t);
-                    pcp_remove_dupplicates_p(&proc_pcs[t], NULL);
-                }
+                pcp_process_legs_append(pcp_remove_dupplicates_p, NULL);
                 break;
             }
             default:
@@ -132,97 +117,94 @@ int pcp_prepare(struct arguments *arg)
             {
             case PCP_STAT_AABB:
             {
-                pcp_aabb_s_arg_t param = {0, 0, NULL};
-                param.output = atoi(curr->func_arg[0]);
-                param.binary = atoi(curr->func_arg[1]);
-                param.output_path = curr->func_arg[2];
-                
-                printf("[STATUS] AABB: {output:%d,binary:%d,output_path:%s}\n",
-                    param.output,
-                    param.binary,
-                    param.output_path);
-
-                for(int t = 0; t < proc_count; t++)
-                {
-                    printf("-------Tile %d-------\n", t);
-                    param.id = t;
-                    pcp_aabb_s(&proc_pcs[t], (void *)&param);
-                }
+                pcp_aabb_s_arg_t *param = 
+                (pcp_aabb_s_arg_t *)malloc(
+                    sizeof(pcp_aabb_s_arg_t)
+                );
+                *param = (pcp_aabb_s_arg_t){
+                    .binary = 1,
+                    .output = 0
+                };
+                param->output = atoi(curr->func_arg[0]);
+                param->binary = atoi(curr->func_arg[1]);
+                strcpy(param->output_path, curr->func_arg[2]);
+                pcp_status_legs_append(pcp_aabb_s, param);
                 break;
             }
             case PCP_STAT_PIXEL_PER_TILE:
             {
-                pcp_pixel_per_tile_s_arg_t param = {
-                    .outpath = NULL,
+                pcp_pixel_per_tile_s_arg_t *param = 
+                (pcp_pixel_per_tile_s_arg_t *)malloc(
+                    sizeof(pcp_pixel_per_tile_s_arg_t)
+                );
+                *param = (pcp_pixel_per_tile_s_arg_t){
+                        .height = 0,
+                        .width = 0,
+                        .mvp_count = 0,
+                        .nx = 1,
+                        .ny = 1,
+                        .nz = 1
+                };
+                param->mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
+                                                         &param->mvps[0][0][0], 
+                                                         MAX_MVP_COUNT, 
+                                                         &param->width, 
+                                                         &param->height);
+                sscanf(curr->func_arg[1], "%d,%d,%d", 
+                                        &param->nx, 
+                                        &param->ny, 
+                                        &param->nz);
+                strcpy(param->outpath, curr->func_arg[2]);
+                pcp_status_legs_append(pcp_pixel_per_tile_s, param);
+                break;
+            }
+            case PCP_STAT_SCREEN_AREA_ESTIMATION:
+            {
+                pcp_screen_area_estimation_s_arg_t *param = 
+                (pcp_screen_area_estimation_s_arg_t *)malloc(
+                    sizeof(pcp_screen_area_estimation_s_arg_t)
+                );
+                *param = (pcp_screen_area_estimation_s_arg_t){
                     .height = 0,
                     .width = 0,
-                    .mvps = NULL,
                     .mvp_count = 0,
-                    .nx = 1,
-                    .ny = 1,
-                    .nz = 1,
-                    .view_id = 0
                 };
                 float mvps[MAX_MVP_COUNT][4][4];
-                int mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
-                                                      &mvps[0][0][0], 
-                                                      MAX_MVP_COUNT, 
-                                                      &param.width, 
-                                                      &param.height);
-
-                sscanf(curr->func_arg[1], "%d,%d,%d", 
-                            &param.nx, 
-                            &param.ny, 
-                            &param.nz);
-                param.outpath = curr->func_arg[2];
-                param.mvps = &mvps[0][0][0];
-                param.mvp_count = mvp_count;
-                
-                for(int t = 0; t < proc_count; t++)
-                {   
-                    pcp_pixel_per_tile_s(&proc_pcs[t], (void *)&param);
-                }
+                param->mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
+                                                         &param->mvps[0][0][0], 
+                                                         MAX_MVP_COUNT, 
+                                                         &param->width, 
+                                                         &param->height);
+                strcpy(param->outpath, curr->func_arg[1]);
+                pcp_status_legs_append(pcp_screen_area_estimation_s, param);
                 break;
             }
             #ifdef PCP_STAT_SAVE_VIEWPORT
             case PCP_STAT_SAVE_VIEWPORT:
             {
-
-                pcp_save_viewport_s_arg_t param = {
-                    NULL, 
-                    0, 
-                    NULL,
-                    0, 
-                    0, 
-                    (vec3f_t){255.0f, 255.0f, 255.0f}
+                pcp_save_viewport_s_arg_t *param = 
+                (pcp_save_viewport_s_arg_t *)malloc(
+                    sizeof(pcp_save_viewport_s_arg_t)
+                );
+                *param = (pcp_save_viewport_s_arg_t){
+                    .height = 0,
+                    .width = 0,
+                    .mvp_count = 0,
+                    .background = (vec3f_t){255.0f, 255.0f, 255.0f}
                 };     
-                float mvps[MAX_MVP_COUNT][4][4];
-                int mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
-                                                      &mvps[0][0][0], 
-                                                      MAX_MVP_COUNT, 
-                                                      &param.width, 
-                                                      &param.height);
+                param->mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
+                                                         &param->mvps[0][0][0], 
+                                                         MAX_MVP_COUNT, 
+                                                         &param->width, 
+                                                         &param->height);
 
                 sscanf(curr->func_arg[1], "%f,%f,%f", 
-                            &param.background.x, 
-                            &param.background.y, 
-                            &param.background.z);
-                param.output_path = curr->func_arg[2];
-                printf("[STATUS] SAVE VIEWPORT: {width:%lu,height:%lu}\n", 
-                       param.width, 
-                       param.height);
+                            &param->background.x, 
+                            &param->background.y, 
+                            &param->background.z);
+                strcpy(param->outpath, curr->func_arg[2]);
 
-                for(int t = 0; t < proc_count; t++)
-                {   
-                    for (int f = 0; f < mvp_count; f++)
-                    {
-                        param.mvp = &mvps[f][0][0];
-                        printf("-------Tile %d-------\n", t);
-                        param.tile_id = t;
-                        param.view_id = f;
-                        pcp_save_viewport_s(&proc_pcs[t], (void *)&param);
-                    }
-                }
+                pcp_status_legs_append(pcp_save_viewport_s, param);
                 break;
             }
             #endif
@@ -233,6 +215,25 @@ int pcp_prepare(struct arguments *arg)
             }           
         }
     }
+    // Timming
+    struct timespec start, end;
+    long time_ms;
+    // Start time
+    clock_gettime(CLOCK_MONOTONIC, &start);  
+    /******************************************/
+    // Run processes
+    for(int t = 0; t < proc_count; t++)
+        pcp_process_legs_run(&proc_pcs[t], t);
+    // Run statuses
+    for(int t = 0; t < proc_count; t++)
+        pcp_status_legs_run(&proc_pcs[t], t);
+    /******************************************/
+    // End time
+    clock_gettime(CLOCK_MONOTONIC, &end);    
+    time_ms = (end.tv_sec - start.tv_sec) * 1000L + (end.tv_nsec - start.tv_nsec) / 1000000L;
+    printf("Execution time: %ld ms\n", time_ms);
+    
+    pcp_free_param();
 
     if(arg->plan & PCP_PLAN_NONE_MERGE)
     {
@@ -334,6 +335,8 @@ static struct argp_option status_options[] = {
     #endif
     {"pixel-per-tile",          0, NULL, OPTION_DOC, 
     "<camera=JSON> <nx,ny,nz> <output-visibility=JSON>"},
+    {"screen-area-estimation",  0, NULL, OPTION_DOC, 
+    "<camera=JSON> <output-estimation=JSON>"},   
     {0}
 };
 

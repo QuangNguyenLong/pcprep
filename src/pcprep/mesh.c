@@ -1,6 +1,7 @@
 #include <pcprep/mesh.h>
 #include <pcprep/wrapper.h>
-
+#include <pcprep/core.h>
+#include <pcprep/vec3f.h>
 #define MSH_PLY_INCLUDE_LIBC_HEADERS
 #include <msh_ply.h>
 
@@ -69,7 +70,43 @@ int mesh_write(mesh_t mesh, const char *filename, int binary)
     msh_ply_close(pf);
 }
 
-int mesh_screen_ratio(mesh_t mesh, float* MVP, float* screen_area)
+static int is_toward(vec2f_t a, vec2f_t b, vec2f_t c)
 {
-    
+    return (b.x - a.x) * (c.y - a.y) > (c.x - a.x) * (b.y - a.y);
+}
+
+int mesh_screen_ratio(mesh_t mesh,
+                      float *mvp,
+                      float *screen_ratio)
+{
+    *screen_ratio = 0;
+
+    vec3f_t *vertices = (vec3f_t *)mesh.pos;
+    vec3f_t *ndcs = (vec3f_t *)malloc(sizeof(vec3f_t) * mesh.num_verts);
+    for (int i = 0; i < mesh.num_verts; i++)
+    {
+        ndcs[i] = vec3f_mvp_mul(vertices[i], mvp);
+    }
+
+    for (int i = 0; i < mesh.num_indices / 3; i++)
+    {
+        int idx0 = mesh.indices[i * 3];
+        int idx1 = mesh.indices[i * 3 + 1];
+        int idx2 = mesh.indices[i * 3 + 2];
+        if (ndcs[idx0].z >= 0 && ndcs[idx0].z <= 1 &&
+            ndcs[idx1].z >= 0 && ndcs[idx1].z <= 1 &&
+            ndcs[idx2].z >= 0 && ndcs[idx2].z <= 1 &&
+            is_toward((vec2f_t){ndcs[idx0].x, ndcs[idx0].y},
+                      (vec2f_t){ndcs[idx1].x, ndcs[idx1].y},
+                      (vec2f_t){ndcs[idx2].x, ndcs[idx2].y}))
+        {
+            *screen_ratio += clipped_triangle_area(
+                (vec2f_t){ndcs[idx0].x, ndcs[idx0].y},
+                (vec2f_t){ndcs[idx1].x, ndcs[idx1].y},
+                (vec2f_t){ndcs[idx2].x, ndcs[idx2].y}
+            );
+        }
+    }
+    // since the screen in ndc is a 2 x 2 square
+    *screen_ratio /= 4;
 }

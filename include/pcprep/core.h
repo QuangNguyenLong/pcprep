@@ -4,6 +4,10 @@
 #define PCP_SAMPLE_RULE_UNIFORM 0x00
 #include <stdlib.h>
 
+typedef struct {
+    float x, y;
+} vec2f_t;
+
 int sample_union(int *input, 
                  int input_size, 
                  int *output, 
@@ -27,4 +31,8 @@ int json_write_tiles_pixel(char *outpath,
                            int num_view, 
                            int **pixel_count_per_tile, 
                            size_t total_pixel);
+
+                  
+float clipped_triangle_area(vec2f_t p1, vec2f_t p2, vec2f_t p3);
+
 #endif

@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <cJSON.h>
+#define MAX_POINTS 10 // Maximum points after clipping
 int sample_union(int *input,
                  int input_size,
                  int *output,
@@ -12,7 +13,6 @@ int sample_union(int *input,
     {
         return -1;
     }
-
     // Create an array to keep track of selected indices
     int *selected = calloc(input_size, sizeof(int));
     if (!selected)
@@ -21,12 +21,10 @@ int sample_union(int *input,
     }
     // Seed the random number generator
     srand((unsigned int)time(NULL));
-
     int selected_count = 0;
     while (selected_count < output_size)
     {
         int index = rand() % input_size;
-
         // Ensure no duplicates
         if (!selected[index])
         {
@@ -34,7 +32,6 @@ int sample_union(int *input,
             output[selected_count++] = input[index];
         }
     }
-
     free(selected);
 }
 float quantize(float x, float q)
@@ -49,12 +46,10 @@ char *read_file(const char *filename)
         fprintf(stderr, "Could not open file: %s\n", filename);
         return NULL;
     }
-
     // Get file size
     fseek(file, 0, SEEK_END);
     long length = ftell(file);
     fseek(file, 0, SEEK_SET);
-
     // Allocate buffer
     char *buffer = (char *)malloc(length + 1);
     if (buffer == NULL)
@@ -63,15 +58,12 @@ char *read_file(const char *filename)
         fclose(file);
         return NULL;
     }
-
     // Read file into buffer
     size_t read_length = fread(buffer, 1, length, file);
     buffer[read_length] = '\0'; // Null-terminate the string
-
     fclose(file);
     return buffer;
 }
-
 void json_write_to_file(const char *filename, void *json)
 {
     cJSON *cjson = (cJSON *)json;
@@ -88,7 +80,6 @@ void json_write_to_file(const char *filename, void *json)
     }
     free(json_string);
 }
-
 int json_parse_cam_matrix(char *filepath, float *mvps, size_t mvps_size, size_t *width, size_t *height)
 {
     char *json_buff = read_file(filepath);
@@ -103,7 +94,6 @@ int json_parse_cam_matrix(char *filepath, float *mvps, size_t mvps_size, size_t 
     // else if it is larger, the actual count is used, the parsed mvp count is returned.
     if (mvps_size < actual_mvp_count)
         actual_mvp_count = mvps_size;
-
     for (int f = 0; f < actual_mvp_count; f++)
     {
         cJSON *matrix = cJSON_GetArrayItem(mvp_array, f);
@@ -126,7 +116,6 @@ int json_write_tiles_pixel(char *outpath,
 {
     cJSON *view = cJSON_CreateObject();
     cJSON *viewArray = cJSON_CreateArray();
-
     for (int v = 0; v < num_view; v++)
     {
         cJSON *view_item = cJSON_CreateObject();
@@ -144,8 +133,108 @@ int json_write_tiles_pixel(char *outpath,
         }
         cJSON_AddItemToObject(view_item, "tile-visibility", tile_visi_array);
         cJSON_AddItemToArray(viewArray, view_item);
-
     }
     cJSON_AddItemToObject(view, "view", viewArray);
     json_write_to_file(outpath, view);
+}
+// Function to compute the area of a polygon given its vertices
+static float polygon_area(vec2f_t *points, int n)
+{
+    if (n < 3)
+        return 0.0; // No valid area if less than 3 points
+    float area = 0.0;
+    for (int i = 0; i < n; i++)
+    {
+        int j = (i + 1) % n;
+        area += points[i].x * points[j].y - points[j].x * points[i].y;
+    }
+    return 0.5 * fabs(area);
+}
+// Function to check if a point is inside the given boundary
+static int inside(vec2f_t p, int edge)
+{
+    switch (edge)
+    {
+    case 0:
+        return p.x >= -1; // Left edge
+    case 1:
+        return p.x <= 1; // Right edge
+    case 2:
+        return p.y >= -1; // Bottom edge
+    case 3:
+        return p.y <= 1; // Top edge
+    }
+    return 0;
+}
+// Function to compute intersection of a line with a square boundary
+static vec2f_t intersection(vec2f_t p1, vec2f_t p2, int edge)
+{
+    vec2f_t inter;
+    float m;
+    if (p1.x == p2.x)
+        m = 1e9; // Avoid division by zero for vertical lines
+    else
+        m = (p2.y - p1.y) / (p2.x - p1.x);
+    switch (edge)
+    {
+    case 0: // Left edge (x = -1)
+        inter.x = -1;
+        inter.y = p1.y + m * (-1 - p1.x);
+        break;
+    case 1: // Right edge (x = 1)
+        inter.x = 1;
+        inter.y = p1.y + m * (1 - p1.x);
+        break;
+    case 2: // Bottom edge (y = -1)
+        inter.y = -1;
+        inter.x = p1.x + (inter.y - p1.y) / m;
+        break;
+    case 3: // Top edge (y = 1)
+        inter.y = 1;
+        inter.x = p1.x + (inter.y - p1.y) / m;
+        break;
+    }
+    return inter;
+}
+// Function to clip a polygon against a square
+static int clip_polygon(vec2f_t *in, int in_len, vec2f_t *out, int edge)
+{
+    if (in_len == 0)
+        return 0;
+    int out_len = 0;
+    vec2f_t prev = in[in_len - 1];
+    int prev_inside = inside(prev, edge);
+    for (int i = 0; i < in_len; i++)
+    {
+        vec2f_t curr = in[i];
+        int curr_inside = inside(curr, edge);
+        if (curr_inside)
+        {
+            if (!prev_inside)
+            {
+                out[out_len++] = intersection(prev, curr, edge); // Entering intersection
+            }
+            out[out_len++] = curr; // Current point is inside
+        }
+        else if (prev_inside)
+        {
+            out[out_len++] = intersection(prev, curr, edge); // Exiting intersection
+        }
+        prev = curr;
+        prev_inside = curr_inside;
+    }
+    return out_len;
+}
+float clipped_triangle_area(vec2f_t p1, vec2f_t p2, vec2f_t p3)
+{
+    vec2f_t polygon[MAX_POINTS] = {p1, p2, p3};
+    int polygon_size = 3;
+    vec2f_t temp[MAX_POINTS];
+    for (int edge = 0; edge < 4; edge++)
+    {
+        polygon_size = clip_polygon(polygon, polygon_size, temp, edge);
+        for (int i = 0; i < polygon_size; i++)
+            polygon[i] = temp[i]; // Copy back
+    }
+    return polygon_area(polygon, polygon_size);
 }

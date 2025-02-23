@@ -20,6 +20,7 @@
 #ifdef WITH_GRAPHIC
 #define PCP_STAT_SAVE_VIEWPORT 0x02
 #endif
+#define PCP_STAT_SCREEN_AREA_ESTIMATION 0x03
 
 #define PCP_PLAN_NONE_NONE 0x00
 #define PCP_PLAN_NONE_TILE 0x01
@@ -74,6 +75,9 @@ const func_info_t statuses_g[] =
         {"pixel-per-tile",
          PCP_STAT_PIXEL_PER_TILE,
          3, 3},
+        {"screen-area-estimation",
+         PCP_STAT_SCREEN_AREA_ESTIMATION,
+         2, 2},
         {NULL, 0, 0, 0}};
 
 struct arguments
@@ -124,6 +128,58 @@ const func_info_t *find_func(const char *name,
     return NULL;
 }
 
+typedef unsigned int (*func_f)(pointcloud_t *pc, void *arg, int pc_id);
+func_f pcp_process_legs_g[MAX_PROCESS] = {NULL};
+void *pcp_process_params_g[MAX_PROCESS] = {NULL};
+unsigned int pcp_process_legs_count_g = 0;
+func_f pcp_status_legs_g[MAX_STATUS] = {NULL};
+void *pcp_status_params_g[MAX_STATUS] = {NULL};
+unsigned int pcp_status_legs_count_g = 0;
+
+unsigned int pcp_process_legs_append(func_f func, void *param)
+{
+    pcp_process_legs_g[pcp_process_legs_count_g] = func;
+    pcp_process_params_g[pcp_process_legs_count_g] = param;
+    pcp_process_legs_count_g++;
+    return 1;
+}
+unsigned int pcp_status_legs_append(func_f func, void *param)
+{
+    pcp_status_legs_g[pcp_status_legs_count_g] = func;
+    pcp_status_params_g[pcp_status_legs_count_g] = param;
+    pcp_status_legs_count_g++;
+    return 1;
+}
+
+unsigned int pcp_process_legs_run(pointcloud_t *pc, int pc_id)
+{
+    for (int i = 0; i < pcp_process_legs_count_g; i++)
+    {
+        if (pcp_process_legs_g[i] != NULL)
+        {
+            pcp_process_legs_g[i](pc, pcp_process_params_g[i], pc_id);
+        }
+    }
+}
+unsigned int pcp_status_legs_run(pointcloud_t *pc, int pc_id)
+{
+    for (int i = 0; i < pcp_status_legs_count_g; i++)
+    {
+        if (pcp_status_legs_g[i] != NULL)
+        {
+            pcp_status_legs_g[i](pc, pcp_status_params_g[i], pc_id);
+        }
+    }
+}
+
+unsigned int pcp_free_param()
+{
+    for (int i = 0; i < pcp_process_legs_count_g; i++)
+        free(pcp_process_params_g[i]);
+    for (int i = 0; i < pcp_status_legs_count_g; i++)
+        free(pcp_status_params_g[i]);
+}
+
 typedef struct pcp_sample_p_arg_t
 {
     float ratio;
@@ -131,7 +187,8 @@ typedef struct pcp_sample_p_arg_t
 } pcp_sample_p_arg_t;
 
 unsigned int pcp_sample_p(pointcloud_t *pc,
-                          void *arg)
+                          void *arg,
+                          int pc_id)
 {
     pcp_sample_p_arg_t *param = (pcp_sample_p_arg_t *)arg;
 
@@ -143,7 +200,8 @@ unsigned int pcp_sample_p(pointcloud_t *pc,
 }
 
 unsigned int pcp_voxel_p(pointcloud_t *pc,
-                         void *arg)
+                         void *arg,
+                         int pc_id)
 {
     float step_size = *(float *)arg;
 
@@ -155,7 +213,8 @@ unsigned int pcp_voxel_p(pointcloud_t *pc,
 }
 
 unsigned int pcp_remove_dupplicates_p(pointcloud_t *pc,
-                                      void *arg)
+                                      void *arg,
+                                      int pc_id)
 {
     pointcloud_t out = {NULL, NULL, 0};
     pointcloud_remove_dupplicates(*pc, &out);
@@ -168,12 +227,12 @@ typedef struct pcp_aabb_s_arg_t
 {
     int output;
     int binary;
-    char *output_path;
-    int id;
+    char output_path[SIZE_PATH];
 } pcp_aabb_s_arg_t;
 
 unsigned int pcp_aabb_s(pointcloud_t *pc,
-                        void *arg)
+                        void *arg,
+                        int pc_id)
 {
     pcp_aabb_s_arg_t *param = (pcp_aabb_s_arg_t *)arg;
 
@@ -194,7 +253,7 @@ unsigned int pcp_aabb_s(pointcloud_t *pc,
     aabb_to_mesh(aabb, &mesh);
 
     char tile_path[SIZE_PATH];
-    snprintf(tile_path, SIZE_PATH, param->output_path, param->id);
+    snprintf(tile_path, SIZE_PATH, param->output_path, pc_id);
     mesh_write(mesh, tile_path, param->binary);
     return 1;
 }
@@ -202,56 +261,54 @@ unsigned int pcp_aabb_s(pointcloud_t *pc,
 #ifdef PCP_STAT_SAVE_VIEWPORT
 typedef struct pcp_save_viewport_s_arg_t
 {
-    char *output_path;
-    int tile_id;
-    float *mvp; // 4x4 matrix
+    char outpath[SIZE_PATH];
+    float mvps[MAX_MVP_COUNT][4][4]; // 4x4 matrixes
+    int mvp_count;
     size_t width;
     size_t height;
     vec3f_t background;
-    int view_id;
 } pcp_save_viewport_s_arg_t;
 unsigned int pcp_save_viewport_s(pointcloud_t *pc,
-                                 void *arg)
+                                 void *arg,
+                                 int pc_id)
 {
     pcp_save_viewport_s_arg_t *param = (pcp_save_viewport_s_arg_t *)arg;
 
-    unsigned char *pixels = (unsigned char *)malloc(param->height * 
-                                                    param->width * 
-                                                    3 * 
-                                                    sizeof(unsigned char));
-    pointcloud_get_viewport(*pc,
-                            param->mvp,
-                            param->width,
-                            param->height,
-                            NULL,
-                            NULL,
-                            param->background,
-                            pixels);
-
-    unsigned char **row_pointers = malloc(param->height * sizeof(unsigned char *));
-    for (int i = 0; i < param->height; i++)
-        row_pointers[i] = malloc(param->width * 3);
-
-    flip_image(row_pointers, pixels, param->width, param->height);
-    free(pixels);
-
-    char tile_path[SIZE_PATH];
-    snprintf(tile_path, SIZE_PATH, param->output_path, param->tile_id, param->view_id);
-
-    save_viewport(row_pointers, param->width, param->height, tile_path);
-    for (int i = 0; i < param->height; i++)
-        free(row_pointers[i]);
-    free(row_pointers);
+    for (int v = 0; v < param->mvp_count; v++)
+    {
+        unsigned char *pixels = (unsigned char *)malloc(param->height *
+                                                        param->width *
+                                                        3 *
+                                                        sizeof(unsigned char));
+        pointcloud_get_viewport(*pc,
+                                &param->mvps[v][0][0],
+                                param->width,
+                                param->height,
+                                NULL,
+                                NULL,
+                                param->background,
+                                pixels);
+        unsigned char **row_pointers = malloc(param->height * sizeof(unsigned char *));
+        for (int i = 0; i < param->height; i++)
+            row_pointers[i] = malloc(param->width * 3);
+        flip_image(row_pointers, pixels, param->width, param->height);
+        free(pixels);
+        char tile_path[SIZE_PATH];
+        snprintf(tile_path, SIZE_PATH, param->outpath, pc_id, v);
+        save_viewport(row_pointers, param->width, param->height, tile_path);
+        for (int i = 0; i < param->height; i++)
+            free(row_pointers[i]);
+        free(row_pointers);
+    }
     return 1;
 }
 #endif
 
 typedef struct pcp_pixel_per_tile_s_arg_t
 {
-    char *outpath;
-    float *mvps; // 4x4 matrix
+    char outpath[SIZE_PATH];
+    float mvps[MAX_MVP_COUNT][4][4]; // 4x4 matrix
     int mvp_count;
-    int view_id;
     size_t width;
     size_t height;
     int nx;
@@ -260,14 +317,15 @@ typedef struct pcp_pixel_per_tile_s_arg_t
 } pcp_pixel_per_tile_s_arg_t;
 
 unsigned int pcp_pixel_per_tile_s(pointcloud_t *pc,
-                                  void *arg)
+                                  void *arg,
+                                  int pc_id)
 {
     pcp_pixel_per_tile_s_arg_t *param = (pcp_pixel_per_tile_s_arg_t *)arg;
     int num_tile = param->nx * param->ny * param->nz;
     int **pixel_count = (int **)malloc(sizeof(int *) * param->mvp_count);
     for (int v = 0; v < param->mvp_count; v++)
-        pixel_count[v] = (int *)calloc(sizeof(int), num_tile);    
-    
+        pixel_count[v] = (int *)calloc(sizeof(int), num_tile);
+
     for (int v = 0; v < param->mvp_count; v++)
     {
         pointcloud_count_pixel_per_tile(*pc,
@@ -276,16 +334,55 @@ unsigned int pcp_pixel_per_tile_s(pointcloud_t *pc,
                                         param->nz,
                                         param->width,
                                         param->height,
-                                        param->mvps + v * 4 * 4,
+                                        &param->mvps[v][0][0],
                                         &pixel_count[v][0]);
     }
-    json_write_tiles_pixel(param->outpath, 
-                           num_tile, 
-                           param->mvp_count, 
-                           pixel_count, 
+    json_write_tiles_pixel(param->outpath,
+                           num_tile,
+                           param->mvp_count,
+                           pixel_count,
                            param->width * param->height);
     free(pixel_count);
     return 1;
+}
+
+typedef struct pcp_screen_area_estimation_s_arg_t
+{
+    float mvps[MAX_MVP_COUNT][4][4];
+    int mvp_count;
+    size_t width;
+    size_t height;
+    char outpath[SIZE_PATH];
+} pcp_screen_area_estimation_s_arg_t;
+
+unsigned int pcp_screen_area_estimation_s(pointcloud_t *pc,
+                                          void *arg,
+                                          int pc_id)
+{
+    pcp_screen_area_estimation_s_arg_t *param = (pcp_screen_area_estimation_s_arg_t *)arg;
+
+    vec3f_t min, max;
+    pointcloud_min(*pc, &min);
+    pointcloud_max(*pc, &max);
+
+    aabb_t aabb = {
+        .min = min,
+        .max = max};
+    mesh_t aabb_m = {
+        .indices = NULL,
+        .num_indices = 0,
+        .num_verts = 0,
+        .pos = NULL};
+
+    aabb_to_mesh(aabb, &aabb_m);
+
+    float screen_ratio = 0;
+
+    for (int v = 0; v < param->mvp_count; v++)
+    {
+        mesh_screen_ratio(aabb_m, &param->mvps[v][0][0], &screen_ratio);
+        printf("View:%d,screen-ratio:%f\n", v, screen_ratio);
+    }
 }
 
 #endif
