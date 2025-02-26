@@ -29,5 +29,5 @@ printf "test save-viewport\n"
 printf "\n"
 
 printf "test screen-area-estimation\n"
-./bin/pcp -i longdress0000.ply -o test/dummy.ply -s screen-area-estimation examples/cam2mat/cam-matrix.json blabla.json
+./bin/pcp -i test/tile%04d.ply -o test/dummy.ply --tiled-input=8 -s screen-area-estimation examples/cam2mat/cam-matrix.json test/screen-area-tile%04d.json
 printf "\n"

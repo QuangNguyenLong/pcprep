@@ -383,7 +383,9 @@ unsigned int pcp_screen_area_estimation_s(pointcloud_t *pc,
         mesh_screen_ratio(aabb_m, &param->mvps[v][0][0], &screen_ratio[v]);
         // printf("View:%d,screen-ratio:%f\n", v, screen_ratio);
     }
-    json_write_screen_area_estimation(param->outpath,
+    char pc_path[SIZE_PATH];
+    snprintf(pc_path, SIZE_PATH, param->outpath, pc_id);
+    json_write_screen_area_estimation(pc_path,
                                       param->mvp_count,
                                       param->width,
                                       param->height,
