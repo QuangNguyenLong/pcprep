@@ -294,7 +294,7 @@ unsigned int pcp_save_viewport_s(pointcloud_t *pc,
         flip_image(row_pointers, pixels, param->width, param->height);
         free(pixels);
         char tile_path[SIZE_PATH];
-        snprintf(tile_path, SIZE_PATH, param->outpath, pc_id, v);
+        snprintf(tile_path, SIZE_PATH, param->outpath, v, pc_id);
         save_viewport(row_pointers, param->width, param->height, tile_path);
         for (int i = 0; i < param->height; i++)
             free(row_pointers[i]);
@@ -359,6 +359,7 @@ unsigned int pcp_screen_area_estimation_s(pointcloud_t *pc,
                                           void *arg,
                                           int pc_id)
 {
+    float* screen_ratio = NULL;
     pcp_screen_area_estimation_s_arg_t *param = (pcp_screen_area_estimation_s_arg_t *)arg;
 
     vec3f_t min, max;
@@ -376,13 +377,18 @@ unsigned int pcp_screen_area_estimation_s(pointcloud_t *pc,
 
     aabb_to_mesh(aabb, &aabb_m);
 
-    float screen_ratio = 0;
-
+    screen_ratio = (float *)malloc(sizeof(float) * param->mvp_count);
     for (int v = 0; v < param->mvp_count; v++)
     {
-        mesh_screen_ratio(aabb_m, &param->mvps[v][0][0], &screen_ratio);
-        printf("View:%d,screen-ratio:%f\n", v, screen_ratio);
+        mesh_screen_ratio(aabb_m, &param->mvps[v][0][0], &screen_ratio[v]);
+        // printf("View:%d,screen-ratio:%f\n", v, screen_ratio);
     }
+    json_write_screen_area_estimation(param->outpath,
+                                      param->mvp_count,
+                                      param->width,
+                                      param->height,
+                                      screen_ratio);
+    free(screen_ratio);
 }
 
 #endif

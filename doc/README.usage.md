@@ -198,7 +198,7 @@ This status is only available if **PCP** was built with `--with-gl --with-png --
   Example: `255,255,255` for black.
 - `output-png(s)=FILE`
   Specifies the output PNG image(s) for each processing point cloud. 
-  Example: `tile%04d.view%04d.png`, whereas the first `%04d` is for tile index, second `%04d` is for viewport index (if the input JSON have multiple MVP matrixes).
+  Example: `view%04d.tile%04d.png`, notice the first `%04d` is for viewport index (if the input JSON have multiple MVP matrixes), second `%04d` is for tile index.
 
 ---
 

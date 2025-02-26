@@ -1,31 +1,33 @@
+mkdir test
+
 printf "test I/O\n"
-./bin/pcp -i longdress0000.ply -o test/IO_test.ply --pre-process=NONE
+./bin/pcp -i longdress0000.ply -o test/IO_test.ply
 printf "\n"
 
 printf "test tiling\n"
-./bin/pcp -i longdress0000.ply -o test/tile%04d.ply -t 2,2,2
+./bin/pcp -i longdress0000.ply -o test/tile%04d.ply --pre-process=TILE -t 2,2,2
 printf "\n"
 
 printf "test sample\n"
-./bin/pcp -i longdress0000.ply -o test/half.ply --pre-process=NONE -p sample 0.5 0
+./bin/pcp -i longdress0000.ply -o test/half.ply -p sample 0.5 0
 printf "\n"
 
-printf "test voxel\n"
-./bin/pcp -i longdress0000.ply -o test/voxel_step_3.ply --pre-process=NONE -p voxel 3
+printf "test voxel and remove dupplicates\n"
+./bin/pcp -i longdress0000.ply -o test/voxel_clean.ply -p voxel 3 -p remove-duplicates
 printf "\n"
 
 printf "test aabb\n"
-./bin/pcp -i longdress0000.ply -o test/dummy.ply --pre-process=NONE -s aabb 1 0 test/bbox%04d.ply 
+./bin/pcp -i longdress0000.ply -o test/dummy.ply -s aabb 1 0 test/bbox%04d.ply
 printf "\n"
 
 printf "test pixel-per-tile\n"
-./bin/pcp -i longdress0000.ply -o test/dummy.ply --pre-process=NONE -s pixel-per-tile examples/cam2mat/cam-matrix.json 2,2,2 test/visi.json
+./bin/pcp -i longdress0000.ply -o test/dummy.ply -s pixel-per-tile examples/cam2mat/cam-matrix.json 2,2,2 test/visi.json
 printf "\n"
 
 printf "test save-viewport\n"
-./bin/pcp -i longdress0000.ply -o test/dummy.ply --pre-process=NONE -s save-viewport examples/cam2mat/cam-matrix.json 255,255,255 test/tile%04d.view%04d.png
+./bin/pcp -i longdress0000.ply -o test/dummy.ply -s save-viewport examples/cam2mat/cam-matrix.json 255,255,255 test/view%04d.tile%04d.png
 printf "\n"
 
 printf "test screen-area-estimation\n"
-./bin/pcp -i longdress0000.ply -o test/dummy.ply --pre-process=NONE -s screen-area-estimation examples/cam2mat/cam-matrix.json blabla
+./bin/pcp -i longdress0000.ply -o test/dummy.ply -s screen-area-estimation examples/cam2mat/cam-matrix.json blabla.json
 printf "\n"

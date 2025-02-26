@@ -4,6 +4,103 @@
 #include <stdio.h>
 #include <cJSON.h>
 #define MAX_POINTS 10 // Maximum points after clipping
+
+// Function to compute the area of a polygon given its vertices
+static float polygon_area(vec2f_t *points, int n)
+{
+    if (n < 3)
+        return 0.0; // No valid area if less than 3 points
+    float area = 0.0;
+    for (int i = 0; i < n; i++)
+    {
+        int j = (i + 1) % n;
+        area += points[i].x * points[j].y - points[j].x * points[i].y;
+    }
+    return 0.5 * fabs(area);
+}
+// Function to check if a point is inside the given boundary
+static int inside(vec2f_t p, int edge)
+{
+    switch (edge)
+    {
+    case 0:
+        return p.x >= -1; // Left edge
+    case 1:
+        return p.x <= 1; // Right edge
+    case 2:
+        return p.y >= -1; // Bottom edge
+    case 3:
+        return p.y <= 1; // Top edge
+    }
+    return 0;
+}
+// Function to compute intersection of a line with a square boundary
+static vec2f_t intersection(vec2f_t p1, vec2f_t p2, int edge)
+{
+    vec2f_t inter;
+    float m;
+    if (p1.x == p2.x)
+        m = 1e9; // Avoid division by zero for vertical lines
+    else
+        m = (p2.y - p1.y) / (p2.x - p1.x);
+    switch (edge)
+    {
+    case 0: // Left edge (x = -1)
+        inter.x = -1;
+        inter.y = p1.y + m * (-1 - p1.x);
+        break;
+    case 1: // Right edge (x = 1)
+        inter.x = 1;
+        inter.y = p1.y + m * (1 - p1.x);
+        break;
+    case 2: // Bottom edge (y = -1)
+        inter.y = -1;
+        inter.x = p1.x + (inter.y - p1.y) / m;
+        break;
+    case 3: // Top edge (y = 1)
+        inter.y = 1;
+        inter.x = p1.x + (inter.y - p1.y) / m;
+        break;
+    }
+    return inter;
+}
+// Function to clip a polygon against a square
+static int clip_polygon(vec2f_t *in, int in_len, vec2f_t *out, int edge)
+{
+    if (in_len == 0)
+        return 0;
+    int out_len = 0;
+    vec2f_t prev = in[in_len - 1];
+    int prev_inside = inside(prev, edge);
+    for (int i = 0; i < in_len; i++)
+    {
+        vec2f_t curr = in[i];
+        int curr_inside = inside(curr, edge);
+        if (curr_inside)
+        {
+            if (!prev_inside)
+            {
+                out[out_len++] = intersection(prev, curr, edge); // Entering intersection
+            }
+            out[out_len++] = curr; // Current point is inside
+        }
+        else if (prev_inside)
+        {
+            out[out_len++] = intersection(prev, curr, edge); // Exiting intersection
+        }
+        prev = curr;
+        prev_inside = curr_inside;
+    }
+    return out_len;
+}
+
+long long get_current_time_ms() 
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts); 
+    return (ts.tv_sec * 1000LL) + (ts.tv_nsec / 1000000LL); 
+}
+
 int sample_union(int *input,
                  int input_size,
                  int *output,
@@ -137,94 +234,32 @@ int json_write_tiles_pixel(char *outpath,
     cJSON_AddItemToObject(view, "view", viewArray);
     json_write_to_file(outpath, view);
 }
-// Function to compute the area of a polygon given its vertices
-static float polygon_area(vec2f_t *points, int n)
+
+int json_write_screen_area_estimation(char *outpath,
+                                      int num_view,
+                                      size_t width,
+                                      size_t height,
+                                      float *screen_ratio)
 {
-    if (n < 3)
-        return 0.0; // No valid area if less than 3 points
-    float area = 0.0;
-    for (int i = 0; i < n; i++)
+    cJSON *view = cJSON_CreateObject();
+    cJSON_AddNumberToObject(view, "width", width);
+    cJSON_AddNumberToObject(view, "height", height);
+    
+    cJSON *viewArray = cJSON_CreateArray();
+    for (int v = 0; v < num_view; v++)
     {
-        int j = (i + 1) % n;
-        area += points[i].x * points[j].y - points[j].x * points[i].y;
+        cJSON *view_item = cJSON_CreateObject();
+        cJSON_AddNumberToObject(view_item, "id", v);
+        cJSON_AddNumberToObject(view_item, "screen-ratio", screen_ratio[v]);
+        // cJSON_AddNumberToObject(view_item, "screen-area", width * height * screen_ratio[v]);
+        cJSON_AddItemToArray(viewArray, view_item);
     }
-    return 0.5 * fabs(area);
+    cJSON_AddItemToObject(view, "view", viewArray);
+    json_write_to_file(outpath, view);
 }
-// Function to check if a point is inside the given boundary
-static int inside(vec2f_t p, int edge)
-{
-    switch (edge)
-    {
-    case 0:
-        return p.x >= -1; // Left edge
-    case 1:
-        return p.x <= 1; // Right edge
-    case 2:
-        return p.y >= -1; // Bottom edge
-    case 3:
-        return p.y <= 1; // Top edge
-    }
-    return 0;
-}
-// Function to compute intersection of a line with a square boundary
-static vec2f_t intersection(vec2f_t p1, vec2f_t p2, int edge)
-{
-    vec2f_t inter;
-    float m;
-    if (p1.x == p2.x)
-        m = 1e9; // Avoid division by zero for vertical lines
-    else
-        m = (p2.y - p1.y) / (p2.x - p1.x);
-    switch (edge)
-    {
-    case 0: // Left edge (x = -1)
-        inter.x = -1;
-        inter.y = p1.y + m * (-1 - p1.x);
-        break;
-    case 1: // Right edge (x = 1)
-        inter.x = 1;
-        inter.y = p1.y + m * (1 - p1.x);
-        break;
-    case 2: // Bottom edge (y = -1)
-        inter.y = -1;
-        inter.x = p1.x + (inter.y - p1.y) / m;
-        break;
-    case 3: // Top edge (y = 1)
-        inter.y = 1;
-        inter.x = p1.x + (inter.y - p1.y) / m;
-        break;
-    }
-    return inter;
-}
-// Function to clip a polygon against a square
-static int clip_polygon(vec2f_t *in, int in_len, vec2f_t *out, int edge)
-{
-    if (in_len == 0)
-        return 0;
-    int out_len = 0;
-    vec2f_t prev = in[in_len - 1];
-    int prev_inside = inside(prev, edge);
-    for (int i = 0; i < in_len; i++)
-    {
-        vec2f_t curr = in[i];
-        int curr_inside = inside(curr, edge);
-        if (curr_inside)
-        {
-            if (!prev_inside)
-            {
-                out[out_len++] = intersection(prev, curr, edge); // Entering intersection
-            }
-            out[out_len++] = curr; // Current point is inside
-        }
-        else if (prev_inside)
-        {
-            out[out_len++] = intersection(prev, curr, edge); // Exiting intersection
-        }
-        prev = curr;
-        prev_inside = curr_inside;
-    }
-    return out_len;
-}
+
+
+
 float clipped_triangle_area(vec2f_t p1, vec2f_t p2, vec2f_t p3)
 {
     vec2f_t polygon[MAX_POINTS] = {p1, p2, p3};
@@ -238,3 +273,4 @@ float clipped_triangle_area(vec2f_t p1, vec2f_t p2, vec2f_t p3)
     }
     return polygon_area(polygon, polygon_size);
 }
+

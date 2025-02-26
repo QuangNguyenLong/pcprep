@@ -370,12 +370,18 @@ int pointcloud_voxel(pointcloud_t pc,
                      pointcloud_t *out)
 {
     // quantize the points to the voxel grid
-    // then remove the duplicates
+    // then remove the duplicates, should it tho ?
 
-    vec3f_t *pos = (vec3f_t *)pc.pos;
-    for (int i = 0; i < pc.size; i++)
+    pointcloud_init(out, pc.size);
+
+    memcpy(out->pos, pc.pos, pc.size * sizeof(float) * 3);
+    memcpy(out->rgb, pc.rgb, pc.size * sizeof(uint8_t) * 3);
+
+    vec3f_t *pos = (vec3f_t *)out->pos;
+    for (int i = 0; i < out->size; i++)
         pos[i] = vec3f_quantize(pos[i], voxel_size);
-    pointcloud_remove_dupplicates(pc, out);
+
+    // pointcloud_remove_dupplicates(pc, out);
 }
 
 int pointcloud_count_pixel_per_tile(pointcloud_t pc,

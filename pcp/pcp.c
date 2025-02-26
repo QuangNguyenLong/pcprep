@@ -22,7 +22,13 @@ int pcp_prepare(struct arguments *arg)
     int                 proc_count             = 0;
     int                 in_count               = 0;
     int                 out_count              = 0;
-    
+    long long           read_time              = 0;
+    long long           pre_proc_time          = 0;
+    long long           proc_time              = 0;
+    long long           post_proc_time         = 0;
+    long long           write_time             = 0;
+    long long           curr_time              = 0;
+
     max_path_size       = SIZE_PATH;
     input_path          = arg->input;
     output_path         = arg->output;
@@ -31,13 +37,16 @@ int pcp_prepare(struct arguments *arg)
     output_tile_path    = (char *)malloc(max_path_size * sizeof(char));
     in_count            = arg->tiled_input;
 
+    curr_time           = get_current_time_ms();
+
     in_pcs = (pointcloud_t *)calloc(in_count, sizeof(pointcloud_t));
     for (int t = 0; t < in_count; t++)
     {
         snprintf(input_tile_path, max_path_size, input_path, t);
         pointcloud_load(&in_pcs[t], input_tile_path);
     }
-
+    read_time           = get_current_time_ms() - curr_time;
+    curr_time           = get_current_time_ms();
     // this only run if in_count = 1
     if (in_count == 1 && arg->plan & PCP_PLAN_TILE_NONE) 
     {
@@ -65,6 +74,8 @@ int pcp_prepare(struct arguments *arg)
         proc_pcs = in_pcs;
         proc_count = in_count;
     }
+
+    pre_proc_time = get_current_time_ms() - curr_time;
 
     if (arg->flags & SET_OPT_PROCESS) 
     {
@@ -215,11 +226,7 @@ int pcp_prepare(struct arguments *arg)
             }           
         }
     }
-    // Timming
-    struct timespec start, end;
-    long time_ms;
-    // Start time
-    clock_gettime(CLOCK_MONOTONIC, &start);  
+    curr_time = get_current_time_ms();
     /******************************************/
     // Run processes
     for(int t = 0; t < proc_count; t++)
@@ -228,12 +235,11 @@ int pcp_prepare(struct arguments *arg)
     for(int t = 0; t < proc_count; t++)
         pcp_status_legs_run(&proc_pcs[t], t);
     /******************************************/
-    // End time
-    clock_gettime(CLOCK_MONOTONIC, &end);    
-    time_ms = (end.tv_sec - start.tv_sec) * 1000L + (end.tv_nsec - start.tv_nsec) / 1000000L;
-    printf("Execution time: %ld ms\n", time_ms);
-    
+    proc_time = get_current_time_ms() - curr_time;
+ 
     pcp_free_param();
+
+    curr_time = get_current_time_ms();
 
     if(arg->plan & PCP_PLAN_NONE_MERGE)
     {
@@ -261,6 +267,11 @@ int pcp_prepare(struct arguments *arg)
         out_pcs = proc_pcs;
         out_count = proc_count;
     }
+
+    post_proc_time = get_current_time_ms() - curr_time;
+   
+    curr_time = get_current_time_ms();
+
     if (proc_count == 0)
         return 0;
     for (int t = 0; t < out_count; t++)
@@ -272,6 +283,16 @@ int pcp_prepare(struct arguments *arg)
     snprintf(output_tile_path, max_path_size, output_path, t);
     pointcloud_write(out_pcs[t], output_tile_path, binary);
     }
+
+    write_time = get_current_time_ms() - curr_time;
+
+    printf("read time:\t%lld ms\npre-process time:\t%lld ms\nprocess/status time:\t%lld ms\npost-process time:\t%lld ms\nwrite time:\t%lld ms\n", 
+            read_time,
+            pre_proc_time, 
+            proc_time,
+            post_proc_time,
+            write_time);
+
     for (int i = 0; i < out_count; i++)
         pointcloud_free(&out_pcs[i]);
     free(out_pcs);
@@ -317,7 +338,7 @@ static struct argp_option process_options[] = {
     "<ratio=FLOAT> <binary=0|1>"},
     {"voxel",                   0, NULL, OPTION_DOC, 
     "<voxel-size=FLOAT>"},
-    {"remove-dupplicates",      0, NULL, OPTION_DOC, 
+    {"remove-duplicates",       0, NULL, OPTION_DOC, 
     "No arguments"},
     {0}
 };
@@ -520,7 +541,7 @@ int main(int argc, char *argv[])
         .output = NULL,
         .binary = 1,
         .tiled_input = 1,
-        .plan = PCP_PLAN_TILE_NONE,
+        .plan = PCP_PLAN_NONE_NONE,
         .procs_size = 0,
         .stats_size = 0,
         .tile = {1, 1, 1}
@@ -528,9 +549,9 @@ int main(int argc, char *argv[])
 
     argp_parse(&argp, argc, argv, 0, 0, &args);
 
-    printf("input: %s\n",       args.input);
-    printf("output: %s\n",      args.output);
-    printf("binary: %d\n",      args.binary);
+    printf("input:\t%s\n",       args.input);
+    printf("output:\t%s\n",      args.output);
+    printf("binary:\t%d\n",      args.binary);
     
     pcp_prepare(&args);
 
