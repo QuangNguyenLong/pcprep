@@ -98,7 +98,7 @@ The `pcp` program processes point cloud (tiles) data from a source file and gene
 ### Set pre-process action Option 
 #### `--pre-process=ACTION`
 
-Set the pre-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is TILE). If the input are file path to point cloud tiles, ACTION can only be MERGE or NONE.
+Set the pre-process action of the program (ACTION can be either TILE, MERGE, or NONE, default is NONE). If the input are file path to point cloud tiles, ACTION can only be MERGE or NONE.
   - `TILE`: Tile the point cloud into multiple tiles before performing any process/status. 
   - `MERGE`: Merge the point cloud tiles into one point cloud before performing any process/status. 
   - `NONE`: Do nothing to the point cloud (tiles) before performing any process/status.
