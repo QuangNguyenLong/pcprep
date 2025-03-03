@@ -56,7 +56,9 @@ int pcp_prepare(struct arguments *arg)
         nx              = arg->tile.nx;
         ny              = arg->tile.ny;
         nz              = arg->tile.nz;
-        proc_count      = pointcloud_tile(in_pcs[0], nx, ny, nz, &proc_pcs);
+        proc_count      = pointcloud_tile(in_pcs[0], 
+                                          nx, ny, nz, 
+                                          &proc_pcs);
         for (int i = 0; i < in_count; i++)
             pointcloud_free(&in_pcs[i]);
         free(in_pcs);  
@@ -156,11 +158,14 @@ int pcp_prepare(struct arguments *arg)
                         .ny = 1,
                         .nz = 1
                 };
-                param->mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
-                                                         &param->mvps[0][0][0], 
-                                                         MAX_MVP_COUNT, 
-                                                         &param->width, 
-                                                         &param->height);
+                param->mvp_count = json_parse_cam_matrix(
+                        curr->func_arg[0], 
+                        &param->mvps[0][0][0], 
+                        MAX_MVP_COUNT, 
+                        &param->width, 
+                        &param->height
+                        );
+
                 sscanf(curr->func_arg[1], "%d,%d,%d", 
                                         &param->nx, 
                                         &param->ny, 
@@ -181,11 +186,13 @@ int pcp_prepare(struct arguments *arg)
                     .mvp_count = 0,
                 };
                 float mvps[MAX_MVP_COUNT][4][4];
-                param->mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
-                                                         &param->mvps[0][0][0], 
-                                                         MAX_MVP_COUNT, 
-                                                         &param->width, 
-                                                         &param->height);
+                param->mvp_count = json_parse_cam_matrix(
+                        curr->func_arg[0], 
+                        &param->mvps[0][0][0], 
+                        MAX_MVP_COUNT, 
+                        &param->width, 
+                        &param->height);
+
                 strcpy(param->outpath, curr->func_arg[1]);
                 pcp_status_legs_append(pcp_screen_area_estimation_s, param);
                 break;
@@ -203,11 +210,12 @@ int pcp_prepare(struct arguments *arg)
                     .mvp_count = 0,
                     .background = (vec3f_t){255.0f, 255.0f, 255.0f}
                 };     
-                param->mvp_count = json_parse_cam_matrix(curr->func_arg[0], 
-                                                         &param->mvps[0][0][0], 
-                                                         MAX_MVP_COUNT, 
-                                                         &param->width, 
-                                                         &param->height);
+                param->mvp_count = json_parse_cam_matrix(
+                        curr->func_arg[0], 
+                        &param->mvps[0][0][0], 
+                        MAX_MVP_COUNT, 
+                        &param->width, 
+                        &param->height);
 
                 sscanf(curr->func_arg[1], "%f,%f,%f", 
                             &param->background.x, 
@@ -257,7 +265,9 @@ int pcp_prepare(struct arguments *arg)
         nx              = arg->tile.nx;
         ny              = arg->tile.ny;
         nz              = arg->tile.nz;
-        out_count       = pointcloud_tile(proc_pcs[0], nx, ny, nz, &out_pcs);
+        out_count       = pointcloud_tile(proc_pcs[0], 
+                                          nx, ny, nz, 
+                                          &out_pcs);
         for (int i = 0; i < proc_count; i++)
             pointcloud_free(&proc_pcs[i]);
         free(proc_pcs);

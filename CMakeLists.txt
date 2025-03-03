@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(pcprep C CXX)
 
 # Optional libraries
-set(OPTIONAL_LIBRARIES 
+set(OPTIONAL_LIBRARIES
     GL
     glfw
     GLEW
@@ -21,15 +21,12 @@ option(WITH_EXAMPLES "Build examples" ON)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Collect source files
-file(GLOB PCPREP_SHARED_SOURCE 
-    ${PROJECT_SOURCE_DIR}/src/pcprep/*.c 
+file(GLOB PCPREP_SHARED_SOURCE
+    ${PROJECT_SOURCE_DIR}/src/pcprep/*.c
     ${PROJECT_SOURCE_DIR}/src/pcprep/*.cpp
     ${PROJECT_SOURCE_DIR}/src/cJSON/*.c
     ${PROJECT_SOURCE_DIR}/src/miniply/*.cpp
 )
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DABC")
-set(CMAKE_EXE_LINKER_FLAGS "")
 
 # Function to handle optional library linking
 function(link_optional_libraries target)
@@ -48,7 +45,7 @@ endfunction()
 function(add_pcprep_executable target_name source_dir source_file link_optional_libs)
     set(SOURCE_FILES ${PCPREP_SHARED_SOURCE} ${source_dir}/${source_file})
     add_executable(${target_name} ${SOURCE_FILES})
-    set_target_properties(${target_name} PROPERTIES 
+    set_target_properties(${target_name} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin
     )
 
