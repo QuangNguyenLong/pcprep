@@ -13,10 +13,11 @@ set(OPTIONAL_LIBRARIES
 
 # Create options for each library
 foreach(lib ${OPTIONAL_LIBRARIES})
-    option(WITH_${lib} "Build with ${lib} support" OFF)
+    option(with_${lib} "Build with ${lib} support" OFF)
 endforeach()
 
-option(WITH_EXAMPLES "Build examples" ON)
+option(examples "Build examples" OFF)
+set(with_png ON)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -31,7 +32,7 @@ file(GLOB PCPREP_SHARED_SOURCE
 # Function to handle optional library linking
 function(link_optional_libraries target)
     foreach(lib ${OPTIONAL_LIBRARIES})
-        if(WITH_${lib})
+        if(with_${lib})
             target_link_libraries(${target} ${lib})
             string(TOUPPER ${lib} LIBFLAG)
             target_compile_definitions(${target} PRIVATE WITH_${LIBFLAG})
@@ -58,7 +59,7 @@ endfunction()
 add_pcprep_executable(pcp ${PROJECT_SOURCE_DIR}/pcp pcp.c ON)
 
 # Add example executables
-if(WITH_EXAMPLES)
+if(examples)
     add_pcprep_executable(cam2mat ${PROJECT_SOURCE_DIR}/examples/cam2mat cam2mat.cpp OFF)
     add_pcprep_executable(pc_io ${PROJECT_SOURCE_DIR}/examples/pc_io pc_io.c OFF)
     add_pcprep_executable(tiling ${PROJECT_SOURCE_DIR}/examples/tiling tiling.c OFF)

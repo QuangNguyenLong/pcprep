@@ -208,7 +208,7 @@ int pcp_prepare(struct arguments *arg)
                     .height = 0,
                     .width = 0,
                     .mvp_count = 0,
-                    .background = (vec3f_t){255.0f, 255.0f, 255.0f}
+                    .background = (vec3uc_t){255, 255, 255}
                 };     
                 param->mvp_count = json_parse_cam_matrix(
                         curr->func_arg[0], 
@@ -217,7 +217,7 @@ int pcp_prepare(struct arguments *arg)
                         &param->width, 
                         &param->height);
 
-                sscanf(curr->func_arg[1], "%f,%f,%f", 
+                sscanf(curr->func_arg[1], "%hhu,%hhu,%hhu", 
                             &param->background.x, 
                             &param->background.y, 
                             &param->background.z);

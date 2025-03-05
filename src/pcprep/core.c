@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <cJSON.h>
+#include <string.h>
 #define MAX_POINTS 10 // Maximum points after clipping
 
 // Function to compute the area of a polygon given its vertices
@@ -273,4 +274,76 @@ float clipped_triangle_area(vec2f_t p1, vec2f_t p2, vec2f_t p3)
     }
     return polygon_area(polygon, polygon_size);
 }
+
+
+int flip_image(unsigned char **row_pointers, 
+               unsigned char *pixels, 
+               size_t width, 
+               size_t height) 
+{
+    for (int y = 0; y < height; y++) {
+        memcpy(row_pointers[y], &pixels[y * width * 3], width * 3);
+    }
+    for (int i = 0; i < height / 2; ++i) {
+        unsigned char *temp = row_pointers[i];
+        row_pointers[i] = row_pointers[height - 1 - i];
+        row_pointers[height - 1 - i] = temp;
+    }
+}
+
+#ifdef WITH_PNG
+int save_viewport(unsigned char **row_pointers, 
+                  int width, 
+                  int height, 
+                  const char *filename)
+{
+
+    // Open the PNG file for writing
+    FILE *fp = fopen(filename, "wb");
+    if (!fp)
+    {
+        fprintf(stderr, "Error: could not open PNG file for writing\n");
+        exit(1);
+    }
+
+    // Initialize the PNG writer
+    png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (!png_ptr)
+    {
+        fprintf(stderr, "Error: could not initialize PNG write structure\n");
+        exit(1);
+    }
+
+    // Initialize the PNG info structure
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+    if (!info_ptr)
+    {
+        fprintf(stderr, "Error: could not initialize PNG info structure\n");
+        exit(1);
+    }
+
+    // Set the error handling for the PNG writer
+    if (setjmp(png_jmpbuf(png_ptr)))
+    {
+        fprintf(stderr, "Error: PNG write failed\n");
+        exit(1);
+    }
+
+    // Set the output file handle
+    png_init_io(png_ptr, fp);
+
+    // Set the image dimensions and format
+    png_set_IHDR(png_ptr, info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+    // Write the PNG header and image data
+    png_write_info(png_ptr, info_ptr);
+    png_write_image(png_ptr, row_pointers);
+    png_write_end(png_ptr, NULL);
+
+    // Clean up and close the file
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    fclose(fp);
+}
+#endif
+
 

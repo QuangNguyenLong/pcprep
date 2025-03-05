@@ -2,6 +2,15 @@
 #define CORE_H
 
 #define PCP_SAMPLE_RULE_UNIFORM 0x00
+
+#if defined(WITH_GLFW) && defined(WITH_GL) && defined(WITH_GLEW)
+#define HAVE_GPU
+#endif
+
+#ifdef WITH_PNG
+#include <png.h>
+#endif
+
 #include <stdlib.h>
 
 typedef struct {
@@ -42,5 +51,17 @@ int json_write_screen_area_estimation(char *outpath,
                                       float *screen_ratio);
 
 float clipped_triangle_area(vec2f_t p1, vec2f_t p2, vec2f_t p3);
+
+int flip_image(unsigned char **row_pointers, 
+               unsigned char *pixels, 
+               size_t width, 
+               size_t height); 
+
+#ifdef WITH_PNG
+int save_viewport(unsigned char **row_pointers, 
+                  int width, 
+                  int height, 
+                  const char *filename);
+#endif
 
 #endif

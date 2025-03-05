@@ -6,39 +6,48 @@ The following packages are required to build the Point cloud preparation tool:
 * GNU Make
 * gcc >= 9.4.0
 * g++ >= 9.4.0
+* libpng-dev 
 
-To build the tool with all features enabled, the following packages are required:
+To build the tool with **desktop mode** (GPU support), install the following additional dependencies:
 * libglfw3-dev 
 * libglew-dev 
-* libpng-dev 
 * libgl-dev 
 
-Additional requirements for example binaries:
+Additional dependencies for example binaries:  
 * libglm-dev >= 0.9.9.7
 
 ## Building
-Bash scripts can be use to build pcprep project:
 
-* scripts/build.sh: build solutions.
+Bash scripts can be used to build the pcprep project:
 
-### Linux
-* Build all solutions:
-```shell
-./scripts/build.sh --all
-```
+  ```shell
+  chmod +x scripts/build.sh
+  ./scripts/build.sh
+  ```
 
-* Build only the **pcp** app with basic features:
-```shell
-./scripts/build.sh
-```
+### Linux (Tested on Ubuntu 20.04, Desktop & Server)
+
+* Build only the **pcp** app:
+  ```shell
+  ./scripts/build.sh
+  ```
+
+* Build with all optional libraries enabled:
+  ```shell
+  ./scripts/build.sh --all
+  ```
+
+* Build the **pcp** app with desktop mode (GL, glfw, GLEW enabled):
+  ```shell
+  ./scripts/build.sh --desktop
+  ```
 
 * Build the additional example binaries:
-```shell
-./scripts/build.sh --with-examples
-```
+  ```shell
+  ./scripts/build.sh --examples
+  ```
 
-All programs are placed in `bin`.   
-
+All programs are placed in the `bin` directory.
 
 ## Point Cloud Prepare (`pcp`)
 

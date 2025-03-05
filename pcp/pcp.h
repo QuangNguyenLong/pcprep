@@ -1,11 +1,13 @@
 #ifndef PCP_H
 #define PCP_H
 
-#include <pcprep/graphic.h>
+// #include <pcprep/graphic.h>
+#include <pcprep/canvas.h>
 #include <pcprep/pointcloud.h>
 #include <pcprep/aabb.h>
 #include <stdint.h>
 #include <cJSON.h>
+#include <pcprep/core.h>
 
 #define MAX_PROCESS 256
 #define MAX_STATUS 256
@@ -17,7 +19,7 @@
 
 #define PCP_STAT_AABB 0x00
 #define PCP_STAT_PIXEL_PER_TILE 0x01
-#ifdef WITH_GRAPHIC
+#ifdef WITH_PNG
 #define PCP_STAT_SAVE_VIEWPORT 0x02
 #endif
 #define PCP_STAT_SCREEN_AREA_ESTIMATION 0x03
@@ -266,7 +268,7 @@ typedef struct pcp_save_viewport_s_arg_t
     int mvp_count;
     size_t width;
     size_t height;
-    vec3f_t background;
+    vec3uc_t background;
 } pcp_save_viewport_s_arg_t;
 unsigned int pcp_save_viewport_s(pointcloud_t *pc,
                                  void *arg,
@@ -274,25 +276,38 @@ unsigned int pcp_save_viewport_s(pointcloud_t *pc,
 {
     pcp_save_viewport_s_arg_t *param = (pcp_save_viewport_s_arg_t *)arg;
 
+    canvas_t cv = {0};
+
+    canvas_init(&cv,
+                param->width,
+                param->height,
+#ifdef HAVE_GPU
+                NULL,
+                NULL,
+#endif
+                param->background);
+    
+
     for (int v = 0; v < param->mvp_count; v++)
     {
-        unsigned char *pixels = (unsigned char *)malloc(param->height *
-                                                        param->width *
-                                                        3 *
-                                                        sizeof(unsigned char));
-        pointcloud_get_viewport(*pc,
-                                &param->mvps[v][0][0],
-                                param->width,
-                                param->height,
-                                NULL,
-                                NULL,
-                                param->background,
-                                pixels);
-        unsigned char **row_pointers = malloc(param->height * sizeof(unsigned char *));
+        canvas_clear(&cv);
+
+        cv.draw_points(&cv,
+                       &param->mvps[v][0][0],
+                       pc->pos,
+                       pc->rgb,
+                       pc->size);
+        unsigned char **row_pointers = NULL;
+        row_pointers = malloc(param->height * sizeof(unsigned char *));
+        
         for (int i = 0; i < param->height; i++)
             row_pointers[i] = malloc(param->width * 3);
-        flip_image(row_pointers, pixels, param->width, param->height);
-        free(pixels);
+        
+        flip_image(row_pointers, 
+                   cv.pixels, 
+                   param->width, 
+                   param->height);
+
         char tile_path[SIZE_PATH];
         snprintf(tile_path, SIZE_PATH, param->outpath, v, pc_id);
         save_viewport(row_pointers, param->width, param->height, tile_path);
@@ -300,6 +315,7 @@ unsigned int pcp_save_viewport_s(pointcloud_t *pc,
             free(row_pointers[i]);
         free(row_pointers);
     }
+    canvas_free(&cv);
     return 1;
 }
 #endif
@@ -381,7 +397,6 @@ unsigned int pcp_screen_area_estimation_s(pointcloud_t *pc,
     for (int v = 0; v < param->mvp_count; v++)
     {
         mesh_screen_ratio(aabb_m, &param->mvps[v][0][0], &screen_ratio[v]);
-        // printf("View:%d,screen-ratio:%f\n", v, screen_ratio);
     }
     char pc_path[SIZE_PATH];
     snprintf(pc_path, SIZE_PATH, param->outpath, pc_id);

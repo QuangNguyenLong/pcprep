@@ -190,7 +190,6 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
 #### Viewport status
 ##### `save-viewport <camera=JSON> <background-color=R,G,B> <output-png(s)=FILE>`
 Calculate the camera viewport when view the processing point cloud given a camera trajectory and the background color.
-This status is only available if **PCP** was built with `--with-gl --with-png --with-glfw --with-glew` 
 - `camera=JSON`
   Specifies the JSON file path of the camera trajectory in MVP matrix. An example JSON can be found [here](../examples/cam2mat/cam-matrix.json).
 - `background-color=R,G,B`

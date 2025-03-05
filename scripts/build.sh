@@ -1,77 +1,77 @@
 #!/bin/bash
 
-# Options with defaults
-WITH_GL=OFF
-WITH_GLEW=OFF
-WITH_glfw=OFF
-WITH_png=OFF
+# Default build options
+BUILD_DIR="build"
 WITH_EXAMPLES=OFF
+WITH_LIBS=()
+
+rm -r "$BUILD_DIR"
+# Extract optional libraries from CMake cache
+mkdir -p "$BUILD_DIR" && cd "$BUILD_DIR"
+cmake .. > /dev/null 2>&1
+ALL_LIBS=($(cmake -L .. | grep -oP '^with_\K[^:]+' | tr '\n' ' '))
+cd ..
+
+DESKTOP_LIBS=(GL glfw GLEW)  # Libraries required for desktop builds
+
+    show_help() {
+        echo "Usage: ./build.sh [options]"
+        echo "Options:"
+        echo "  --examples        Enable example builds"
+        echo "  --with-<lib>      Enable specific optional library (e.g., --with-GL)"
+        echo "  --all             Enable all optional libraries"
+        echo "  --desktop         Enable desktop-related libraries (GL, glfw, GLEW)"
+        echo "  --clean           Remove build and install directories"
+        echo "  --help            Show this help message"
+        echo "Available optional libraries:"
+        for lib in "${ALL_LIBS[@]}"; do
+            echo "  - $lib"
+        done
+        exit 0
+    }
 
 # Parse command-line arguments
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    --with-gl)
-      WITH_GL=ON
-      shift
-      ;;
-    --with-glfw)
-      WITH_glfw=ON
-      shift
-      ;;
-    --with-glew)
-      WITH_GLEW=ON
-      shift
-      ;;
-    --with-png)
-      WITH_png=ON
-      shift
-      ;;
-    --with-examples)
-      WITH_EXAMPLES=ON
-      shift
-      ;;
-    --all)
-      WITH_GL=ON
-      WITH_GLEW=ON
-      WITH_glfw=ON
-      WITH_png=ON
-      WITH_EXAMPLES=ON
-      shift
-      ;;
-    -h|--help)
-      echo "Usage: ./build.sh [options]"
-      echo "Options:"
-      echo "  --with-gl        Enable OpenGL"
-      echo "  --with-glew      Enable GLEW"
-      echo "  --with-glfw      Enable glfw"
-      echo "  --with-png       Enable png"
-      echo "  --with-examples  Build examples"
-      echo "  --all            Build all"
-      echo "  -h, --help       Show this help message"
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1"
-      exit 1
-      ;;
-  esac
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --examples)
+            WITH_EXAMPLES=ON
+            ;;
+        --with-*)
+            LIB_NAME=${1#--with-}  # Extract library name
+            WITH_LIBS+=("-Dwith_${LIB_NAME}=ON")
+            ;;
+        --all)
+            for lib in "${ALL_LIBS[@]}"; do
+                WITH_LIBS+=("-Dwith_${lib}=ON")
+            done
+            ;;
+        --desktop)
+            for lib in "${DESKTOP_LIBS[@]}"; do
+                WITH_LIBS+=("-Dwith_${lib}=ON")
+            done
+            ;;
+        --clean)
+            echo "Cleaning build directory..."
+            rm -rf "$BUILD_DIR"
+            exit 0
+            ;;
+        --help)
+            show_help
+            ;;
+        *)
+            echo "Unknown option: $1"
+            show_help
+            ;;
+    esac
+    shift
 done
 
-# Create build directory
-if [ -d "build" ]; then
-  echo "Cleaning up existing build directory..."
-  rm -rf build
-fi
-mkdir build
-cd build
+# Create and enter build directory
+mkdir -p "$BUILD_DIR" && cd "$BUILD_DIR"
 
-# Run CMake with optional flags
-cmake .. \
-  -DWITH_GL=${WITH_GL} \
-  -DWITH_GLEW=${WITH_GLEW} \
-  -DWITH_glfw=${WITH_glfw} \
-  -DWITH_png=${WITH_png} \
-  -DWITH_EXAMPLES=${WITH_EXAMPLES}
+# Run CMake configuration
+cmake .. -Dexamples=$WITH_EXAMPLES "${WITH_LIBS[@]}"
 
-# Build
+# Build the project
 make -j$(nproc)
+
