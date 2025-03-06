@@ -161,9 +161,9 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
   - `<ARG>,...`: Arguments for the calculation.  
   Example: `--status=aabb 1 0 bbox%04d.ply`,`-s aabb 1 0 bbox%04d.ply`
 
-#### AABB status
+#### Axis-Aligned Bounding Box (AABB)
 ##### `aabb <output> <binary> <output-path>`
-  Calculate the Aligned Axis Bounding Box of the processing point cloud.
+  Calculate the Axis-Aligned Bounding Box of the processing point cloud.
 - `output=0|1|2`
   Specifies how to get the bounding box:
   - `0` (default): Print on terminal.  
@@ -177,8 +177,8 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
   Specifies the output file(s). 
   Example: `bbox%04d.ply` is the output path for multiple output files. 
 
-#### Pixel-per-tile status
-##### `pixel-per-tile <camera=JSON> <nx,ny,nz> <output-visibility=JSON>`
+#### Pixel per Tile
+##### `save-viewport <camera=JSON> <nx,ny,nz> <output-visibility=JSON>`
   Calculate the number of pixels each point cloud tile occupies in the camera viewport when view the processing point cloud from a given camera trajectory.
 - `camera=JSON`
   Specifies the JSON file path of the camera trajectory in MVP matrix. An example JSON can be found [here](../examples/cam2mat/cam-matrix.json).
@@ -187,7 +187,16 @@ Set the post-process action of the program (ACTION can be either TILE, MERGE, or
 - `output-visibility=JSON`
   Specifies the output JSON file for each processing point cloud. 
 
-#### Viewport status
+#### Screen Area Estimation
+##### `screen-area-estimation <camera=JSON> <output-estimation=JSON>`
+Estimate the portion of the screen occupied by the processing point cloud, given a specific camera trajectory.
+- `camera=JSON`
+  Specifies the JSON file path of the camera trajectory in MVP matrix. An example JSON can be found [here](../examples/cam2mat/cam-matrix.json).
+- `output-estimation=JSON`
+  Specifies the output JSON file for each processing point cloud. 
+
+
+#### Save Viewport
 ##### `save-viewport <camera=JSON> <background-color=R,G,B> <output-png(s)=FILE>`
 Calculate the camera viewport when view the processing point cloud given a camera trajectory and the background color.
 - `camera=JSON`
