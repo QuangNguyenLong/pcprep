@@ -3,18 +3,22 @@
 ## Requirements
 The following packages are required to build the Point cloud preparation tool:
 * cmake >= 3.0
-* GNU Make
+* GNU Make >= 4.2.1
 * gcc >= 9.4.0
 * g++ >= 9.4.0
 * libpng-dev 
 
-To build the tool with **desktop mode** (GPU support), install the following additional dependencies:
-* libglfw3-dev 
-* libglew-dev 
-* libgl-dev 
+For Ubuntu, you can run the following:
+  ```shell
+  sudo apt-get install cmake make gcc g++ libpng-dev
+  
+  # (OPTIONAL) to build the tool with desktop mode (GPU support)
+  # install the following additional dependencies 
+  sudo apt-get install libglfw3-dev libglew-dev libgl-dev
 
-Additional dependencies for example binaries:  
-* libglm-dev >= 0.9.9.7
+  # (OPTIONAL) dependencies for example binaries 
+  sudo apt-get install libglm-dev
+```
 
 ## Building
 
@@ -25,7 +29,7 @@ Bash scripts can be used to build the pcprep project:
   ./scripts/build.sh
   ```
 
-### Linux (Tested on Ubuntu 20.04, Desktop & Server)
+### Linux (Tested on Ubuntu Desktop & Server)
 
 * Build only the **pcp** app:
   ```shell
