@@ -2,6 +2,7 @@
 
 # Default build options
 BUILD_DIR="build"
+EXTERNAL_DIR="external"
 WITH_EXAMPLES=OFF
 WITH_LIBS=()
 
@@ -53,6 +54,7 @@ while [[ "$#" -gt 0 ]]; do
         --clean)
             echo "Cleaning build directory..."
             rm -rf "$BUILD_DIR"
+            rm -rf "$EXTERNAL_DIR"
             exit 0
             ;;
         --help)

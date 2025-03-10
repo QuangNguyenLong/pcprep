@@ -57,7 +57,6 @@ endfunction()
 
 # Add executables
 add_pcprep_executable(pcp ${PROJECT_SOURCE_DIR}/pcp pcp.c ON)
-
 # Add example executables
 if(examples)
     add_pcprep_executable(cam2mat ${PROJECT_SOURCE_DIR}/examples/cam2mat cam2mat.cpp OFF)
@@ -67,3 +66,22 @@ if(examples)
     add_pcprep_executable(subsampling ${PROJECT_SOURCE_DIR}/examples/subsampling subsampling.c OFF)
     add_pcprep_executable(screen_area ${PROJECT_SOURCE_DIR}/examples/screen_area screen_area.cpp OFF)
 endif()
+
+include(ExternalProject)
+
+ExternalProject_Add(
+    vpcc
+    GIT_REPOSITORY https://github.com/MPEGGroup/mpeg-pcc-tmc2.git
+    GIT_TAG master
+    CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${PROJECT_SOURCE_DIR}/external/vpcc
+)
+
+# ExternalProject_Add(
+#    gpcc
+#    GIT_REPOSITORY https://github.com/MPEGGroup/mpeg-pcc-tmc13.git
+#    GIT_TAG master
+#    CMAKE_ARGS
+#        -DCMAKE_INSTALL_PREFIX=${PROJECT_SOURCE_DIR}/external/gpcc
+#)
+
