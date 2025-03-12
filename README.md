@@ -3,9 +3,9 @@
 ## Requirements
 The following packages are required to build the Point cloud preparation tool:
 * cmake >= 3.0
-* GNU Make >= 4.2.1
-* gcc >= 9.4.0
-* g++ >= 9.4.0
+* GNU Make
+* gcc
+* g++
 * libpng-dev 
 
 For Ubuntu, you can run the following:
@@ -65,6 +65,10 @@ All programs are placed in the `bin` directory.
 ```
 
 More infomations could be found in the [user manual](doc/README.usage.md).
+
+## Compressed Point Cloud Tiles (`fil-PCTv1`) Dataset  
+
+The [`pcprep.sh`](pcprep.sh) script was used to generate a dataset of V-PCC-compressed point cloud tiles, derived from the [8i-VFBv2](http://plenodb.jpeg.org/pc/8ilabs) point cloud sequences. This dataset is publicly available [here](https://drive.google.com/drive/folders/1qQp4go6xP--utvJNhyrMi8RexRt6J5Dh).
 
 ## Examples
 ### Tiling

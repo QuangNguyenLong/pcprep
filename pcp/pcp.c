@@ -313,7 +313,7 @@ int pcp_prepare(struct arguments *arg)
     return proc_count;
 }
 
-const char *argp_program_version = "pcp 0.1";
+const char *argp_program_version = "pcp 1.0";
 const char *argp_program_bug_address = "quang.nglong@gmail.com";
 
 static char doc[] = "A program that prepare point cloud.";

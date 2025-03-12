@@ -2,24 +2,16 @@
 
 PCP_PATH="bin/pcp"
 VPCC_PATH="external/vpcc/bin/PccAppEncoder"
-# GPCC_PATH="external/gpcc/bin/tmc3"
 TMP_FOLDER="tmp"
 
 VPCC_CFG_FOLDER="build/vpcc-prefix/src/vpcc/cfg/"
-# GPCC_CFG_FOLDER="build/gpcc-prefix/src/gpcc/cfg/"
 
 DEFAULT_VPCC_CTX="
 --configurationFolder=${VPCC_CFG_FOLDER}
 --config=${VPCC_CFG_FOLDER}/common/ctc-common.cfg
 --config=${VPCC_CFG_FOLDER}/condition/ctc-all-intra.cfg"
 
-# mode=0 for encoding
-# DEFAULT_GPCC_CTX="
-# --mode=0
-# --attribute=color"
-
 _VPCC_START_FRAME_OPT_="startFrameNumber"
-# _GPCC_START_FRAME_OPT_="firstFrameNum"
 
 unset -v input
 unset -v num_in
