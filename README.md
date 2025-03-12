@@ -66,7 +66,7 @@ All programs are placed in the `bin` directory.
 
 More infomations could be found in the [user manual](doc/README.usage.md).
 
-## Compressed Point Cloud Tiles (`fil-PCTv1`) Dataset  
+## Compressed Point Cloud Tiles (`fil-CPCTv1`) Dataset  
 
 The [`pcprep.sh`](pcprep.sh) script was used to generate a dataset of V-PCC-compressed point cloud tiles, derived from the [8i-VFBv2](http://plenodb.jpeg.org/pc/8ilabs) point cloud sequences. This dataset is publicly available [here](https://drive.google.com/drive/folders/1qQp4go6xP--utvJNhyrMi8RexRt6J5Dh).
 
