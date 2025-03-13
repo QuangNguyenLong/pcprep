@@ -1,0 +1,3 @@
+[submodule "trajectory-tool"]
+	path = trajectory-tool
+	url = https://github.com/nghiantran03/Camera-Path-Tool

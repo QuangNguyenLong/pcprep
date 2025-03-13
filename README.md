@@ -70,6 +70,10 @@ More infomations could be found in the [user manual](doc/README.usage.md).
 
 The [`pcprep.sh`](pcprep.sh) script was used to generate a dataset of V-PCC-compressed point cloud tiles, derived from the [8i-VFBv2](http://plenodb.jpeg.org/pc/8ilabs) point cloud sequences. This dataset is publicly available [here](https://drive.google.com/drive/folders/1qQp4go6xP--utvJNhyrMi8RexRt6J5Dh).
 
+## Synthetic Trajectory Generation
+
+To edit and create synthetic user's camera trajectory, a tool has been designed to be used in Unity Engine as a script. More information about how to use the scripts can be found [here](https://github.com/nghiantran03/Camera-Path-Tool).
+
 ## Examples
 ### Tiling
 

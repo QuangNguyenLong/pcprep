@@ -6,7 +6,6 @@ EXTERNAL_DIR="external"
 WITH_EXAMPLES=OFF
 WITH_LIBS=()
 
-rm -r "$BUILD_DIR"
 # Extract optional libraries from CMake cache
 mkdir -p "$BUILD_DIR" && cd "$BUILD_DIR"
 cmake .. > /dev/null 2>&1
