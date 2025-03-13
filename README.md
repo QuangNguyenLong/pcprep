@@ -72,7 +72,13 @@ The [`pcprep.sh`](pcprep.sh) script was used to generate a dataset of V-PCC-comp
 
 ## Synthetic Trajectory Generation
 
-To edit and create synthetic user's camera trajectory, a tool has been designed to be used in Unity Engine as a script. More information about how to use the scripts can be found in [trajectory-tool/README.md](trajectory-tool/README.md).
+To edit and create synthetic user's camera trajectory, a tool has been designed to be used in Unity Engine as a script. More information about how to use the scripts can be found [here](https://github.com/nghiantran03/Camera-Path-Tool).
+
+The scripts can be found in the folder [`trajectory-tool`](trajectory-tool) if the repository was cloned with submodule:
+
+```shell
+git clone --recursive https://github.com/QuangNguyenLong/pcprep.git
+```
 
 ## Examples
 ### Tiling
