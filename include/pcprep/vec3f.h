@@ -139,6 +139,39 @@ static inline vec3f_t vec3f_mvp_mul(vec3f_t v, float *mvp)
     return (vec3f_t){temp_x, temp_y, temp_z};
 }
 
+static inline vec3f_t vec3f_rotate(vec3f_t v, float angle, vec3f_t axis) {
+    float c = cosf(angle);
+    float s = sinf(angle);
+    float one_minus_c = 1.0f - c;
+
+    float len = sqrtf(axis.x * axis.x + 
+                      axis.y * axis.y + 
+                      axis.z * axis.z);
+    axis.x /= len;
+    axis.y /= len;
+    axis.z /= len;
+
+    float ux = axis.x, uy = axis.y, uz = axis.z;
+
+    float R[3][3] = {
+        { ux * ux * one_minus_c + c, 
+          ux * uy * one_minus_c - uz * s, 
+          ux * uz * one_minus_c + uy * s },
+        { uy * ux * one_minus_c + uz * s, 
+          uy * uy * one_minus_c + c,      
+          uy * uz * one_minus_c - ux * s },
+        { uz * ux * one_minus_c - uy * s, 
+          uz * uy * one_minus_c + ux * s, 
+          uz * uz * one_minus_c + c }
+    };
+
+    vec3f_t result;
+    result.x = R[0][0] * v.x + R[0][1] * v.y + R[0][2] * v.z;
+    result.y = R[1][0] * v.x + R[1][1] * v.y + R[1][2] * v.z;
+    result.z = R[2][0] * v.x + R[2][1] * v.y + R[2][2] * v.z;
+
+    return result;
+}
 
 #ifdef __cplusplus
 }

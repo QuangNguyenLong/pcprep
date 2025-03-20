@@ -7,9 +7,7 @@
 #define HAVE_GPU
 #endif
 
-#ifdef WITH_PNG
 #include <png.h>
-#endif
 
 #include <stdlib.h>
 
@@ -57,11 +55,9 @@ int flip_image(unsigned char **row_pointers,
                size_t width, 
                size_t height); 
 
-#ifdef WITH_PNG
 int save_viewport(unsigned char **row_pointers, 
                   int width, 
                   int height, 
                   const char *filename);
-#endif
 
 #endif

@@ -31,27 +31,45 @@ Bash scripts can be used to build the pcprep project:
 
 ### Linux (Tested on Ubuntu Desktop & Server)
 
-* Build only the **pcp** app:
-  ```shell
-  ./scripts/build.sh
-  ```
+* Build **pcp**, **pcprep** library:
 
-* Build with all optional libraries enabled:
-  ```shell
-  ./scripts/build.sh --all
-  ```
+```shell
+mkdir build
+cd build
+cmake ..
+make -j$(nproc)
+make install
+```
 
-* Build the **pcp** app with desktop mode (GL, glfw, GLEW enabled):
-  ```shell
-  ./scripts/build.sh --desktop
-  ```
+* Build with desktop mode:
 
-* Build the additional example binaries:
-  ```shell
-  ./scripts/build.sh --examples
-  ```
+```shell
+mkdir build
+cd build
+cmake .. -DDESKTOP_MODE=ON 
+make -j$(nproc)
+make install
+```
 
-All programs are placed in the `bin` directory.
+* Build with additional examples:
+
+```shell
+mkdir build
+cd build
+cmake .. -DBUILD_EXAMPLES=ON 
+make -j$(nproc)
+make install
+```
+
+* Build with VPCC (for [pcprep.sh](pcprep.sh)):
+
+```shell
+mkdir build
+cd build
+cmake .. -DBUILD_VPCC=ON 
+make -j$(nproc)
+make install
+```
 
 ## Point Cloud Prepare (`pcp`)
 

@@ -291,7 +291,6 @@ int flip_image(unsigned char **row_pointers,
     }
 }
 
-#ifdef WITH_PNG
 int save_viewport(unsigned char **row_pointers, 
                   int width, 
                   int height, 
@@ -344,6 +343,5 @@ int save_viewport(unsigned char **row_pointers,
     png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);
 }
-#endif
 
 

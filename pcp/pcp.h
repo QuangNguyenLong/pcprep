@@ -19,7 +19,6 @@
 
 #define PCP_STAT_AABB 0x00
 #define PCP_STAT_PIXEL_PER_TILE 0x01
-#ifdef WITH_PNG
 #define PCP_STAT_SAVE_VIEWPORT 0x02
 #endif
 #define PCP_STAT_SCREEN_AREA_ESTIMATION 0x03
@@ -408,4 +407,3 @@ unsigned int pcp_screen_area_estimation_s(pointcloud_t *pc,
     free(screen_ratio);
 }
 
-#endif
