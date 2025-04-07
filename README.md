@@ -1,4 +1,4 @@
-# Point cloud preparation tool
+# [Point cloud preparation tool](https://github.com/QuangNguyenLong/pcprep)
 
 ## Requirements
 The following packages are required to build the Point cloud preparation tool:
