@@ -1,5 +1,7 @@
 # [Point cloud preparation tool](https://github.com/QuangNguyenLong/pcprep)
 
+The original project has now been relocated to [filrg/pcprep](https://github.com/filrg/pcprep).
+
 ## Requirements
 The following packages are required to build the Point cloud preparation tool:
 * cmake >= 3.0
